@@ -21,6 +21,16 @@ const TEMPLATES = {
     description: "Scheduled background tasks",
     files: generateCronWorkerFiles,
   },
+  "vite-react": {
+    name: "Vite + React",
+    description: "Single Page App + Serverless Backend",
+    files: generateViteReactFiles,
+  },
+  "nextjs": {
+    name: "Next.js Fullstack",
+    description: "Next.js frontend + NovaServe API backend",
+    files: generateNextjsFiles,
+  },
 } as const;
 
 export function initCommand(): Command {
@@ -263,6 +273,111 @@ export default defineApp({
 `,
 
     ".gitignore": `node_modules/
+dist/
+.nova/
+.env
+`,
+  };
+}
+
+function generateViteReactFiles(
+  name: string,
+  runtime: string,
+  region: string
+): Record<string, string> {
+  return {
+    "nova.config.ts": `import { defineApp, api, staticSite } from "novaserve";
+
+export default defineApp({
+  name: "${name}",
+  region: "${region}",
+  runtime: "${runtime}",
+
+  resources: {
+    frontend: staticSite.create({
+      buildDir: "dist",
+      buildCommand: "npm run build",
+    }),
+    api: api.create({
+      routes: {
+        "GET /api/hello": "src/api/hello.handler",
+      },
+    }),
+  },
+});
+`,
+    "src/api/hello.ts": `import type { NovaContext } from "novaserve/runtime";
+
+export const handler = async (ctx: NovaContext) => {
+  return ctx.json({ message: "Hello from NovaServe API!" });
+};
+`,
+    "index.html": `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>${name}</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+`,
+    "src/main.tsx": `import React from 'react'
+import ReactDOM from 'react-dom/client'
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <h1>Welcome to ${name} powered by NovaServe</h1>
+  </React.StrictMode>
+)
+`,
+    ".gitignore": `node_modules/
+dist/
+.nova/
+.env
+`,
+  };
+}
+
+function generateNextjsFiles(
+  name: string,
+  runtime: string,
+  region: string
+): Record<string, string> {
+  return {
+    "nova.config.ts": `import { defineApp, api } from "novaserve";
+
+export default defineApp({
+  name: "${name}",
+  region: "${region}",
+  runtime: "${runtime}",
+
+  resources: {
+    api: api.create({
+      routes: {
+        "GET /api/v1/health": "src/api/health.handler",
+      },
+    }),
+  },
+});
+`,
+    "src/api/health.ts": `import type { NovaContext } from "novaserve/runtime";
+
+export const handler = async (ctx: NovaContext) => {
+  return ctx.json({ status: "ok", framework: "Next.js + NovaServe" });
+};
+`,
+    "next.config.js": `/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+};
+
+module.exports = nextConfig;
+`,
+    ".gitignore": `node_modules/
+.next/
 dist/
 .nova/
 .env

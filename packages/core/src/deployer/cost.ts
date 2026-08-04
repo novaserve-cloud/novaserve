@@ -1,4 +1,5 @@
 import type { Resource } from "../types/resources.js";
+import { toResource } from "../types/resources.js";
 import type { NovaApp } from "@novaserve/sdk";
 
 export interface CostEstimate {
@@ -23,8 +24,9 @@ export class CostEstimator {
 
     // Assumptions for the estimate (e.g. 1 million requests)
     const assumedInvocations = environment === "production" ? 1_000_000 : 10_000;
+    const resources: Resource[] = app.resources.map(toResource);
 
-    for (const resource of app.resources) {
+    for (const resource of resources) {
       let cost = 0;
       let details = "";
 
@@ -33,7 +35,7 @@ export class CostEstimator {
         case "function": {
           // Lambda pricing: ~$0.20 per 1M requests
           cost = (assumedInvocations / 1_000_000) * 0.20;
-          details = \`\${assumedInvocations} invocations/mo\`;
+          details = `${assumedInvocations} invocations/mo`;
           break;
         }
         case "database": {

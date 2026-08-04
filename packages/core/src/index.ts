@@ -31,6 +31,8 @@ export type {
 
 export { toResource } from "./types/resources.js";
 
+export type { NovaPlugin } from "./types/plugin.js";
+
 export type {
   NovaProvider,
   ProviderStatus,

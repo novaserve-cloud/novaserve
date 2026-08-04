@@ -84,15 +84,31 @@ export class DeploymentEngine {
         );
       }
 
+      // Execute plugin onInit & preBuild hooks
+      const plugins = (app.config as any)?.plugins || [];
+      for (const plugin of plugins) {
+        if (plugin.onInit) await plugin.onInit(app);
+        if (plugin.preBuild) await plugin.preBuild(app);
+      }
+
       // 6. Build/bundle functions
       await this.eventBus.emit("build:start", { resourceCount: resources.length });
       const bundler = new Bundler(this.projectRoot);
       const handlers = this.extractHandlers(resources);
 
+      const buildResultsMap = new Map<string, { size: number; durationMs: number }>();
       if (handlers.length > 0) {
-        await bundler.bundleAll(handlers);
+        const results = await bundler.bundleAll(handlers);
+        for (const [name, res] of results) {
+          buildResultsMap.set(name, { size: res.size, durationMs: res.durationMs });
+        }
       }
       await this.eventBus.emit("build:complete", { handlerCount: handlers.length });
+
+      // Execute plugin postBuild hooks
+      for (const plugin of plugins) {
+        if (plugin.postBuild) await plugin.postBuild(app, buildResultsMap);
+      }
 
       // 7. Get current state for diffing
       const currentState = this.stateManager.getResources(app.name, environment);
@@ -109,6 +125,11 @@ export class DeploymentEngine {
           errors: [],
           outputs: {},
         };
+      }
+
+      // Execute plugin preDeploy hooks
+      for (const plugin of plugins) {
+        if (plugin.preDeploy) await plugin.preDeploy(app);
       }
 
       // 9. Execute deployment
@@ -131,6 +152,11 @@ export class DeploymentEngine {
           durationMs: Date.now() - startTime,
           outputs: result.outputs,
         });
+
+        // Execute plugin postDeploy hooks
+        for (const plugin of plugins) {
+          if (plugin.postDeploy) await plugin.postDeploy(app, result);
+        }
       } else {
         await this.eventBus.emit("deploy:error", {
           errors: result.errors,

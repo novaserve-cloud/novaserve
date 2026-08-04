@@ -4,6 +4,20 @@
  * Validation schemas for nova.config.ts
  */
 
+export interface NovaConfig {
+  /** Project name */
+  name: string;
+  
+  /** Default region to deploy to */
+  region?: string;
+  
+  /** Default runtime for functions */
+  runtime?: "node18" | "node20" | "node22" | string;
+
+  /** Plugins to run */
+  plugins?: any[];
+}
+
 /** Valid config file names (searched in order) */
 export const CONFIG_FILE_NAMES = [
   "nova.config.ts",
