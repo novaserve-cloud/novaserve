@@ -1,6 +1,6 @@
 {
-  "name": "@novaserve/cli",
-  "version": "0.1.0",
+  "name": "novaserve",
+  "version": "1.0.0",
   "description": "NovaServe CLI — Beautiful terminal interface for serverless development",
   "type": "module",
   "bin": {
