@@ -48,15 +48,21 @@ export default defineApp({
 
 ☁️ **Cloud-Agnostic** — Deploy to AWS, Azure, GCP, Cloudflare, Docker, or locally. Same code.
 
+📊 **Local Dashboard** — Visual topology graph, live metric streams, and deployment history via `nova dashboard`.
+
+🧠 **AI Companion** — Terminal-native AI developer assistant via `nova ai`.
+
+🔐 **Built-in Authentication** — `@novaserve/auth` with zero-dependency JWT, OAuth 2.0 (GitHub, Google), and route protection middleware.
+
+🔌 **Extensible Plugin System** — `NovaPlugin` lifecycle hooks (`preBuild`, `postBuild`, `preDeploy`, `postDeploy`).
+
 ⚡ **Blazing Fast Local Dev** — Hono-based dev server with hot reload. No Docker required.
 
 📦 **Zero Config** — Auto-detects handlers, bundles with esbuild, generates IAM policies.
 
-🔄 **Incremental Deploys** — Only deploys what changed. Parallel execution.
+🔄 **Incremental Deploys** — Only deploys what changed. DAG topological resolution.
 
-🔒 **Built-in Secrets** — AES-256 encrypted, synced to your cloud provider.
-
-🎯 **Beautiful CLI** — Stunning terminal UI with spinners, diffs, and progress bars.
+🎯 **Fullstack Templates** — Scaffolding for REST APIs, Cron Workers, Vite/React, and Next.js apps via `nova init`.
 
 ## Quick Start
 
