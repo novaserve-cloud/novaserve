@@ -12,6 +12,15 @@ export class NovaContext {
   readonly rawEvent: unknown;
   /** Raw provider context */
   readonly rawContext: unknown;
+  
+  /** Observability: Basic logger */
+  readonly logger: {
+    info: (msg: string, meta?: any) => void;
+    error: (msg: string, meta?: any) => void;
+  };
+
+  /** Observability: Request Trace ID */
+  readonly traceId: string;
 
   // ── Request Properties ──────────────────────────────
 
@@ -27,7 +36,6 @@ export class NovaContext {
   readonly headers: Record<string, string>;
 
   private _body: unknown;
-  private _parsed: boolean;
 
   constructor(
     event: unknown,
@@ -36,12 +44,20 @@ export class NovaContext {
   ) {
     this.rawEvent = event;
     this.rawContext = context;
-    this._parsed = false;
+    
+    this.traceId = Math.random().toString(36).substring(2, 15);
+    
+    this.logger = {
+      info: (msg, meta) => console.log(JSON.stringify({ level: 'INFO', traceId: this.traceId, msg, meta })),
+      error: (msg, meta) => console.error(JSON.stringify({ level: 'ERROR', traceId: this.traceId, msg, meta }))
+    };
 
     // Normalize event format across providers
     const evt = event as Record<string, unknown>;
+    const reqContext = (evt.requestContext as Record<string, unknown>) || {};
+    const httpContext = (reqContext.http as Record<string, unknown>) || {};
 
-    this.method = (evt.httpMethod as string) || (evt.requestContext as Record<string, unknown>)?.http?.method as string || "GET";
+    this.method = (evt.httpMethod as string) || (httpContext.method as string) || "GET";
     this.path = (evt.path as string) || (evt.rawPath as string) || "/";
     this.params = (evt.pathParameters as Record<string, string>) || {};
     this.query = (evt.queryStringParameters as Record<string, string>) || {};
@@ -58,7 +74,6 @@ export class NovaContext {
       try {
         this._body =
           typeof evt.body === "string" ? JSON.parse(evt.body) : evt.body;
-        this._parsed = true;
       } catch {
         this._body = evt.body;
       }

@@ -4,7 +4,7 @@
     <strong>The future of serverless development</strong>
   </p>
   <p align="center">
-    As simple as Vercel · As powerful as Terraform · As fast as Bun · As intelligent as AI
+    As simple as Vercel · As powerful as Terraform · As fast as Bun
   </p>
 </p>
 

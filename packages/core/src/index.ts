@@ -29,6 +29,8 @@ export type {
   ResolvedResource,
 } from "./types/resources.js";
 
+export { toResource } from "./types/resources.js";
+
 export type {
   NovaProvider,
   ProviderStatus,

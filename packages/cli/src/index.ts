@@ -24,6 +24,8 @@ import { deployCommand } from "./commands/deploy.js";
 import { destroyCommand } from "./commands/destroy.js";
 import { logsCommand } from "./commands/logs.js";
 import { doctorCommand } from "./commands/doctor.js";
+import { dashboardCommand } from "./commands/dashboard.js";
+import { aiCommand } from "./commands/ai.js";
 
 const program = new Command();
 
@@ -43,6 +45,8 @@ program.addCommand(deployCommand());
 program.addCommand(destroyCommand());
 program.addCommand(logsCommand());
 program.addCommand(doctorCommand());
+program.addCommand(dashboardCommand());
+program.addCommand(aiCommand());
 
 // Parse and execute
 program.parse();

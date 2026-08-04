@@ -33,8 +33,7 @@ export function devCommand(): Command {
 
         await provider.init(app.config);
 
-        // Convert resources
-        const { toResource } = await import("@novaserve/core");
+        const { ConfigParser, ConfigValidator, StateManager, toResource } = await import("@novaserve/core");
         const resources = app.resources.map(toResource);
 
         // Start the local server

@@ -8,7 +8,7 @@ import { Command } from "commander";
 import { logger } from "../utils/logger.js";
 import { loadConfig } from "../utils/config-loader.js";
 import { withSpinner } from "../ui/spinner.js";
-import { DeploymentEngine, InfrastructureDiff, toResource } from "@novaserve/core";
+import { DeploymentEngine, toResource, DeployResult } from "@novaserve/core";
 
 export function deployCommand(): Command {
   return new Command("deploy")
@@ -36,9 +36,23 @@ export function deployCommand(): Command {
         if (provider === "local") {
           const { LocalProvider } = await import("@novaserve/provider-local");
           cloudProvider = new LocalProvider({});
+        } else if (provider === "aws") {
+          const { AWSProvider } = await import("@novaserve/provider-aws");
+          cloudProvider = new AWSProvider();
+        } else if (provider === "azure") {
+          const { AzureProvider } = await import("@novaserve/provider-azure");
+          cloudProvider = new AzureProvider();
+        } else if (provider === "gcp") {
+          const { GCPProvider } = await import("@novaserve/provider-gcp");
+          cloudProvider = new GCPProvider();
+        } else if (provider === "cloudflare") {
+          const { CloudflareProvider } = await import("@novaserve/provider-cloudflare");
+          cloudProvider = new CloudflareProvider();
+        } else if (provider === "docker") {
+          const { DockerProvider } = await import("@novaserve/provider-docker");
+          cloudProvider = new DockerProvider();
         } else {
-          // For now, use local provider as fallback
-          logger.warn(`Provider "${provider}" not yet implemented. Using local provider for demo.`);
+          logger.warn(`Provider "${provider}" is unknown. Falling back to local for demo.`);
           const { LocalProvider } = await import("@novaserve/provider-local");
           cloudProvider = new LocalProvider({});
         }
@@ -50,7 +64,7 @@ export function deployCommand(): Command {
       const engine = new DeploymentEngine(cloudProvider, process.cwd());
 
       try {
-        const result = await withSpinner(
+        const result = await withSpinner<DeployResult>(
           `Deploying ${app.resources.length} resource(s)...`,
           () => engine.deploy(app, {
             environment,

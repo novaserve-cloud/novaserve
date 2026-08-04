@@ -6,8 +6,7 @@ import { Command } from "commander";
 import { logger } from "../utils/logger.js";
 import { loadConfig } from "../utils/config-loader.js";
 import { withSpinner } from "../ui/spinner.js";
-import { Bundler } from "@novaserve/core";
-import { toResource } from "@novaserve/core";
+import { Bundler, toResource } from "@novaserve/core";
 
 export function buildCommand(): Command {
   return new Command("build")
