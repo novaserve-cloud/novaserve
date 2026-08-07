@@ -4,7 +4,7 @@
  * Validates the parsed NovaApp configuration for correctness.
  */
 
-import type { NovaApp } from "@novaserve/sdk";
+import type { NovaApp } from "novaserve-sdk";
 import { VALIDATION_RULES } from "./schema.js";
 
 export interface ConfigValidationResult {

@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { logger } from "../utils/logger.js";
-import { ConfigParser } from "@novaserve/core";
+import { ConfigParser } from "novaserve-core";
 import readline from "readline";
 
 export const aiCommand = () => {

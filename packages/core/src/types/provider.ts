@@ -6,7 +6,7 @@
  */
 
 import type { Resource, ResolvedResource } from "./resources.js";
-import type { NovaAppConfig } from "@novaserve/sdk";
+import type { NovaAppConfig } from "novaserve-sdk";
 
 /** Provider status */
 export interface ProviderStatus {

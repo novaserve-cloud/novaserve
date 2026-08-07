@@ -4,8 +4,8 @@
  * Loads nova.config.ts from the current project.
  */
 
-import { ConfigParser } from "@novaserve/core";
-import type { NovaApp } from "@novaserve/sdk";
+import { ConfigParser } from "novaserve-core";
+import type { NovaApp } from "novaserve-sdk";
 import { logger } from "./logger.js";
 
 /**

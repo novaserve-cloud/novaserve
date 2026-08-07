@@ -28,12 +28,12 @@ export function devCommand(): Command {
 
       try {
         // Dynamically import local provider to avoid bundling issues
-        const { LocalProvider } = await import("@novaserve/provider-local");
+        const { LocalProvider } = await import("novaserve-provider-local");
         const provider = new LocalProvider({ port });
 
         await provider.init(app.config);
 
-        const { ConfigParser, ConfigValidator, StateManager, toResource } = await import("@novaserve/core");
+        const { ConfigParser, ConfigValidator, StateManager, toResource } = await import("novaserve-core");
         const resources = app.resources.map(toResource);
 
         // Start the local server

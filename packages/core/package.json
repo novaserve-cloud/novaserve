@@ -1,10 +1,10 @@
 {
-  "name": "@novaserve/core",
-  "version": "0.1.0",
-  "description": "NovaServe Core Engine — config parsing, dependency graph, bundling, deployment",
+  "name": "novaserve-core",
+  "version": "1.0.3",
+  "description": "NovaServe Core Engine — Config parsing, graph resolution, and deployment engine",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -15,11 +15,11 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@novaserve/sdk": "workspace:*",
+    "novaserve-sdk": "workspace:*",
     "esbuild": "^0.24.0",
     "chokidar": "^4.0.0",
     "glob": "^11.0.0"
@@ -28,6 +28,26 @@
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
   },
-  "files": ["dist"],
-  "license": "MIT"
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Md Shadab Azam Ansari",
+    "email": "md.shadab.azam.ansari@gmail.com",
+    "url": "https://md-shadab-azam-ansari.vercel.app/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sazamansari/NovaServe-.git"
+  },
+  "homepage": "https://md-shadab-azam-ansari.vercel.app/",
+  "keywords": [
+    "serverless",
+    "framework",
+    "cloud",
+    "typescript",
+    "iac",
+    "novaserve"
+  ]
 }

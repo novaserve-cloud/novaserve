@@ -1,5 +1,5 @@
 /**
- * @novaserve/auth — Authentication & Authorization Package
+ * novaserve-auth — Authentication & Authorization Package
  */
 
 export { JWT, type JWTPayload } from "./jwt.js";

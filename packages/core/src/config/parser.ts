@@ -11,7 +11,7 @@ import { readFile, writeFile, unlink, mkdir } from "node:fs/promises";
 import { join, resolve, dirname } from "node:path";
 import { pathToFileURL } from "node:url";
 import { createHash } from "node:crypto";
-import type { NovaApp } from "@novaserve/sdk";
+import type { NovaApp } from "novaserve-sdk";
 import { CONFIG_FILE_NAMES } from "./schema.js";
 
 export class ConfigParser {
@@ -53,7 +53,7 @@ export class ConfigParser {
         format: "esm",
         platform: "node",
         target: "node20",
-        external: ["@novaserve/*", "novaserve"],
+        external: ["novaserve-*", "novaserve"],
         write: true,
         logLevel: "silent",
       });

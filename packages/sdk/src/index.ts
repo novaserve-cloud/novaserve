@@ -1,5 +1,5 @@
 /**
- * @novaserve/sdk
+ * novaserve-sdk
  *
  * TypeScript-first serverless configuration SDK.
  * No YAML. No boilerplate. Just code.

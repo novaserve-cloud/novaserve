@@ -16,9 +16,9 @@ import type {
   InvokeResult,
   ValidationResult,
   DeploymentPlanAction,
-} from "@novaserve/core";
-import type { Resource, ResolvedResource } from "@novaserve/core";
-import type { NovaAppConfig } from "@novaserve/sdk";
+} from "novaserve-core";
+import type { Resource, ResolvedResource } from "novaserve-core";
+import type { NovaAppConfig } from "novaserve-sdk";
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { join, resolve } from "node:path";

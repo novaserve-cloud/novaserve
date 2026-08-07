@@ -1,5 +1,5 @@
 /**
- * @novaserve/runtime
+ * novaserve-runtime
  *
  * Universal handler wrapper with context injection.
  * Write handlers once, run anywhere.

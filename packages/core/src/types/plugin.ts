@@ -1,4 +1,4 @@
-import type { NovaApp } from "@novaserve/sdk";
+import type { NovaApp } from "novaserve-sdk";
 
 export interface NovaPlugin {
   name: string;

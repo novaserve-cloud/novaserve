@@ -1,6 +1,6 @@
 import type { Resource } from "../types/resources.js";
 import { toResource } from "../types/resources.js";
-import type { NovaApp } from "@novaserve/sdk";
+import type { NovaApp } from "novaserve-sdk";
 
 export interface CostEstimate {
   resourceName: string;

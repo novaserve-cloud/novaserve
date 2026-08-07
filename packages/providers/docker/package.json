@@ -1,12 +1,15 @@
 {
-  "name": "@novaserve/provider-docker",
-  "version": "0.1.0",
+  "name": "novaserve-provider-docker",
+  "version": "1.0.3",
   "description": "NovaServe Docker Provider — Containerize and deploy via Docker",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsc",
@@ -15,12 +18,32 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@novaserve/core": "workspace:*",
-    "@novaserve/sdk": "workspace:*"
+    "novaserve-core": "workspace:*",
+    "novaserve-sdk": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0"
   },
-  "files": ["dist"],
-  "license": "MIT"
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Md Shadab Azam Ansari",
+    "email": "md.shadab.azam.ansari@gmail.com",
+    "url": "https://md-shadab-azam-ansari.vercel.app/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sazamansari/NovaServe-.git"
+  },
+  "homepage": "https://md-shadab-azam-ansari.vercel.app/",
+  "keywords": [
+    "serverless",
+    "framework",
+    "cloud",
+    "typescript",
+    "iac",
+    "novaserve"
+  ]
 }

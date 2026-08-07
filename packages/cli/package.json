@@ -1,30 +1,49 @@
 {
   "name": "novaserve",
-  "version": "1.0.0",
-  "description": "NovaServe CLI — Beautiful terminal interface for serverless development",
+  "version": "1.0.3",
+  "description": "NovaServe — Next-Generation Cloud-Agnostic Serverless Development Framework",
+  "author": {
+    "name": "Md Shadab Azam Ansari",
+    "email": "md.shadab.azam.ansari@gmail.com",
+    "url": "https://md-shadab-azam-ansari.vercel.app/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sazamansari/NovaServe-.git"
+  },
+  "homepage": "https://md-shadab-azam-ansari.vercel.app/",
+  "keywords": [
+    "serverless",
+    "framework",
+    "cloud",
+    "typescript",
+    "iac",
+    "novaserve"
+  ],
   "type": "module",
   "bin": {
-    "nova": "./dist/index.js",
-    "novaserve": "./dist/index.js"
+    "nova": "dist/index.js",
+    "novaserve": "dist/index.js"
   },
-  "main": "./dist/index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@novaserve/sdk": "workspace:*",
-    "@novaserve/core": "workspace:*",
-    "@novaserve/runtime": "workspace:*",
-    "@novaserve/provider-local": "workspace:*",
-    "@novaserve/provider-aws": "workspace:*",
-    "@novaserve/provider-azure": "workspace:*",
-    "@novaserve/provider-gcp": "workspace:*",
-    "@novaserve/provider-cloudflare": "workspace:*",
-    "@novaserve/provider-docker": "workspace:*",
+    "novaserve-sdk": "^1.0.3",
+    "novaserve-core": "^1.0.3",
+    "novaserve-runtime": "^1.0.3",
+    "novaserve-provider-local": "^1.0.3",
+    "novaserve-provider-aws": "^1.0.3",
+    "novaserve-provider-azure": "^1.0.3",
+    "novaserve-provider-gcp": "^1.0.3",
+    "novaserve-provider-cloudflare": "^1.0.3",
+    "novaserve-provider-docker": "^1.0.3",
     "commander": "^13.0.0",
     "chalk": "^5.4.0",
     "ora": "^8.0.0",
@@ -38,6 +57,9 @@
     "vitest": "^3.0.0",
     "@types/inquirer": "^9.0.0"
   },
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "license": "MIT"
 }

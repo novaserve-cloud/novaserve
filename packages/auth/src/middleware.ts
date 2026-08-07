@@ -1,4 +1,4 @@
-import type { NovaContext, NovaResponse } from "@novaserve/runtime";
+import type { NovaContext, NovaResponse } from "novaserve-runtime";
 import { JWT, type JWTPayload } from "./jwt.js";
 
 export interface ProtectedContext extends NovaContext {

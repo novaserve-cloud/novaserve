@@ -1,19 +1,40 @@
 {
-  "name": "@novaserve/auth",
-  "version": "0.1.0",
+  "name": "novaserve-auth",
+  "version": "1.0.3",
   "description": "Authentication and authorization utilities for NovaServe applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "type": "module",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@novaserve/runtime": "workspace:*"
+    "novaserve-runtime": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
     "@types/node": "^22.0.0"
-  }
+  },
+  "author": {
+    "name": "Md Shadab Azam Ansari",
+    "email": "md.shadab.azam.ansari@gmail.com",
+    "url": "https://md-shadab-azam-ansari.vercel.app/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sazamansari/NovaServe-.git"
+  },
+  "homepage": "https://md-shadab-azam-ansari.vercel.app/",
+  "keywords": [
+    "serverless",
+    "framework",
+    "cloud",
+    "typescript",
+    "iac",
+    "novaserve"
+  ]
 }

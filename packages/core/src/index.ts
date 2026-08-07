@@ -1,5 +1,5 @@
 /**
- * @novaserve/core — Core Engine
+ * novaserve-core — Core Engine
  *
  * Config parsing, dependency graph resolution,
  * esbuild bundling, and deployment orchestration.

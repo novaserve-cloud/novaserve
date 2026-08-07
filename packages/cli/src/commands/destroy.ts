@@ -6,7 +6,7 @@ import { Command } from "commander";
 import { logger } from "../utils/logger.js";
 import { loadConfig } from "../utils/config-loader.js";
 import { withSpinner } from "../ui/spinner.js";
-import { DeploymentEngine } from "@novaserve/core";
+import { DeploymentEngine } from "novaserve-core";
 
 export function destroyCommand(): Command {
   return new Command("destroy")
@@ -28,7 +28,7 @@ export function destroyCommand(): Command {
       }
 
       try {
-        const { LocalProvider } = await import("@novaserve/provider-local");
+        const { LocalProvider } = await import("novaserve-provider-local");
         const provider = new LocalProvider({});
         const engine = new DeploymentEngine(provider, process.cwd());
 

@@ -8,9 +8,9 @@ import type {
   InvokeResult,
   ValidationResult,
   DeploymentPlanAction,
-} from "@novaserve/core";
-import type { Resource, ResolvedResource } from "@novaserve/core";
-import type { NovaAppConfig } from "@novaserve/sdk";
+} from "novaserve-core";
+import type { Resource, ResolvedResource } from "novaserve-core";
+import type { NovaAppConfig } from "novaserve-sdk";
 import { createHash } from "node:crypto";
 import { writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";

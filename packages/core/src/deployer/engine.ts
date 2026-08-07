@@ -5,7 +5,7 @@
  * Config → Validate → Build → Plan → Deploy → Save State
  */
 
-import type { NovaApp } from "@novaserve/sdk";
+import type { NovaApp } from "novaserve-sdk";
 import type { NovaProvider, DeploymentPlan, DeployResult } from "../types/provider.js";
 import type { Resource, ResolvedResource } from "../types/resources.js";
 import { toResource } from "../types/resources.js";
