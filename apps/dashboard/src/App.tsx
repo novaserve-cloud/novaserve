@@ -219,7 +219,6 @@ export default function App() {
   );
 }
 
-// Custom Sidebar Item with White/Yellow Glow Hover Effects
 function NavItem({
   icon,
   label,
@@ -280,7 +279,6 @@ function NavItem({
   );
 }
 
-// Overview Component with Topology Graph
 function OverviewTab({ onNavigate }: { onNavigate: (tab: any) => void }) {
   const [selectedNode, setSelectedNode] = useState<string | null>('api-gateway');
 
@@ -534,7 +532,6 @@ function OverviewTab({ onNavigate }: { onNavigate: (tab: any) => void }) {
   );
 }
 
-// Node Card Component for DAG Graph
 function NodeCard({
   title,
   type,
@@ -582,7 +579,6 @@ function NodeCard({
   );
 }
 
-// Stat Card Component
 function StatCard({
   title,
   value,
@@ -624,7 +620,6 @@ function StatCard({
   );
 }
 
-// Resources View
 function ResourcesTab({ searchQuery }: { searchQuery: string }) {
   const [filter, setFilter] = useState('all');
 
@@ -732,7 +727,6 @@ function ResourcesTab({ searchQuery }: { searchQuery: string }) {
   );
 }
 
-// Real-time Console Log Terminal
 function LogsTab() {
   const [logs, setLogs] = useState<string[]>([
     '[INIT] NovaServe Local Dev Engine v0.1.0 started on http://localhost:4002',
@@ -805,7 +799,6 @@ function LogsTab() {
   );
 }
 
-// AI Copilot View
 function AIAssistantTab() {
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([
     {
@@ -883,7 +876,6 @@ function AIAssistantTab() {
   );
 }
 
-// Settings View
 function SettingsTab() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
