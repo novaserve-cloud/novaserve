@@ -226,19 +226,14 @@ export default function App() {
       >
         {/* Brand Header */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-gray-200">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-400 flex items-center justify-center text-gray-800 shadow-xs font-semibold">
-              <Zap className="w-4 h-4 fill-gray-800 text-gray-800" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="font-semibold text-base text-gray-800 tracking-tight">NovaServe</span>
-                <span className="px-1.5 py-0.5 text-[10px] font-mono font-medium rounded bg-gray-100 text-gray-600 border border-gray-200">
-                  v0.1.0
-                </span>
-              </div>
-              <p className="text-[11px] text-gray-500 font-medium">Serverless Engine</p>
-            </div>
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" viewBox="0 0 24 24">
+              <path d="M12 2L22 12L12 22L2 12Z" />
+            </svg>
+            <span className="font-bold text-base text-gray-900 tracking-tight">NovaServe</span>
+            <span className="px-1.5 py-0.5 text-[10px] font-mono font-medium rounded bg-gray-100 text-gray-600 border border-gray-200 ml-0.5">
+              v0.1.0
+            </span>
           </div>
           <button
             onClick={() => setMobileSidebarOpen(false)}
@@ -2264,15 +2259,15 @@ function JenkinsStyleLoginScreen({
       <div className="w-full max-w-md space-y-6">
         {/* Brand Logo Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex w-12 h-12 rounded-xl bg-amber-400 items-center justify-center text-gray-800 shadow-xs font-semibold mb-1">
-            <Zap className="w-6 h-6 fill-gray-800 text-gray-800" />
-          </div>
-          <h1 className="text-xl font-semibold text-gray-800 tracking-tight flex items-center justify-center gap-2">
-            NovaServe
+          <div className="flex items-center justify-center gap-2.5">
+            <svg className="w-6 h-6 fill-amber-400 text-amber-400 shrink-0" viewBox="0 0 24 24">
+              <path d="M12 2L22 12L12 22L2 12Z" />
+            </svg>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">NovaServe</h1>
             <span className="px-2 py-0.5 text-[10px] font-mono font-medium rounded bg-gray-200 text-gray-700 border border-gray-300">
               v0.1.0
             </span>
-          </h1>
+          </div>
           <p className="text-xs text-gray-500 font-medium">
             The next-generation, cloud-agnostic serverless development framework.
           </p>
