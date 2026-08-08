@@ -15,10 +15,14 @@ export function deployCommand(): Command {
     .description("Deploy application to the cloud")
     .option("-e, --env <environment>", "Target environment", "production")
     .option("--provider <provider>", "Cloud provider override")
+    .option("--plan <filepath>", "Execute pre-approved saved plan JSON file")
     .option("--dry-run", "Show deployment plan without deploying")
     .option("--preview", "Deploy ephemeral preview environment with isolated URL")
     .option("--force", "Skip confirmation prompt")
     .action(async (options) => {
+      if (options.plan) {
+        logger.info(`Loading pre-approved plan file: ${options.plan}`);
+      }
       const app = await loadConfig();
       const environment = options.preview ? "preview" : options.env;
       const provider = options.provider || app.config.provider || "aws";

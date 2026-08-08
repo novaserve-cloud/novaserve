@@ -1,0 +1,56 @@
+{
+  "appName": "my-nova-app",
+  "environment": "development",
+  "provider": "aws",
+  "irHash": "b3b77f54b78885b6",
+  "actions": [
+    {
+      "action": "create",
+      "resourceId": "api-api",
+      "resourceType": "api",
+      "name": "api",
+      "reason": "New resource defined in Nova IR",
+      "estimatedSeconds": 6,
+      "estimatedMonthlyCostUsd": 1.5,
+      "dependsOn": []
+    },
+    {
+      "action": "create",
+      "resourceId": "storage-uploads",
+      "resourceType": "storage",
+      "name": "uploads",
+      "reason": "New resource defined in Nova IR",
+      "estimatedSeconds": 3,
+      "estimatedMonthlyCostUsd": 0.8,
+      "dependsOn": []
+    },
+    {
+      "action": "create",
+      "resourceId": "queue-emails",
+      "resourceType": "queue",
+      "name": "emails",
+      "reason": "New resource defined in Nova IR",
+      "estimatedSeconds": 2,
+      "estimatedMonthlyCostUsd": 0.4,
+      "dependsOn": []
+    },
+    {
+      "action": "create",
+      "resourceId": "database-main",
+      "resourceType": "database",
+      "name": "main",
+      "reason": "New resource defined in Nova IR",
+      "estimatedSeconds": 15,
+      "estimatedMonthlyCostUsd": 12,
+      "dependsOn": []
+    }
+  ],
+  "summary": {
+    "create": 4,
+    "update": 0,
+    "delete": 0,
+    "skip": 0
+  },
+  "totalEstimatedSeconds": 19,
+  "totalEstimatedMonthlyCostUsd": 14.7
+}

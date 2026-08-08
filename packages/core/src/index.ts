@@ -80,4 +80,11 @@ export type { DriftReport, DriftItem } from "./deployer/drift.js";
 export { NovaPluginManager } from "./plugins/manager.js";
 export type { NovaPluginPackage, PluginCapability } from "./plugins/manager.js";
 
+// Journal & Telemetry
+export { DeploymentJournal } from "./deployer/journal.js";
+export type { ExecutionState, JournalEntry, DeploymentJournalRecord } from "./deployer/journal.js";
+export { NovaTelemetry } from "./observability/telemetry.js";
+export type { NovaSpan, NovaTraceContext } from "./observability/telemetry.js";
+
+
 

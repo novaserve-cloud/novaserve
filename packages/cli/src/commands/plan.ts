@@ -2,10 +2,12 @@
  * `nova plan`
  *
  * Generates and displays the infrastructure deployment plan from Nova IR.
+ * Supports saving plan files for deterministic CI/CD deployment execution.
  */
 
 import { Command } from "commander";
 import chalk from "chalk";
+import { writeFileSync } from "fs";
 import { NovaCompiler, NovaPlanner, toResource } from "novaserve-core";
 import { loadConfig } from "../utils/config-loader.js";
 
@@ -13,6 +15,7 @@ export function planCommand(): Command {
   return new Command("plan")
     .description("Generate and preview infrastructure changes from Nova IR")
     .option("-p, --provider <name>", "Target cloud provider (aws, docker, cloudflare)", "aws")
+    .option("--save <filepath>", "Save generated execution plan JSON to a file")
     .option("--json", "Output execution plan as raw machine-readable JSON", false)
     .option("--ci", "Run in non-interactive CI mode", false)
     .action(async (options) => {
@@ -26,6 +29,11 @@ export function planCommand(): Command {
         });
 
         const plan = NovaPlanner.plan(compileResult.ir, {}, options.provider);
+
+        if (options.save) {
+          writeFileSync(options.save, JSON.stringify(plan, null, 2));
+          console.log(chalk.bold.green(`✓ Saved execution plan to ${options.save}`));
+        }
 
         if (options.json) {
           console.log(JSON.stringify({ plan, validation: compileResult.capabilityValidation }, null, 2));
