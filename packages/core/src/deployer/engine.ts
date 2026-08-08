@@ -216,43 +216,45 @@ export class DeploymentEngine {
           const routes = resource.config.routes as Record<string, string> | undefined;
           if (routes) {
             for (const [route, handler] of Object.entries(routes)) {
-              const [method, path] = route.split(" ");
-              const name = `api-${method?.toLowerCase()}-${path?.replace(/[/:]/g, "-").replace(/^-/, "")}`;
-              const [filePath] = handler.split(".");
-              handlers.push({ name, entryPoint: `${filePath}.ts` });
+              if (typeof handler === "string" && handler) {
+                const [method, path] = route.split(" ");
+                const name = `api-${method?.toLowerCase()}-${path?.replace(/[/:]/g, "-").replace(/^-/, "")}`;
+                const [filePath] = handler.split(".");
+                handlers.push({ name, entryPoint: `${filePath || handler}.ts` });
+              }
             }
           }
           break;
         }
         case "function": {
           const handler = resource.config.handler as string | undefined;
-          if (handler) {
+          if (typeof handler === "string" && handler) {
             const [filePath] = handler.split(".");
             handlers.push({
               name: `fn-${resource.name}`,
-              entryPoint: `${filePath}.ts`,
+              entryPoint: `${filePath || handler}.ts`,
             });
           }
           break;
         }
         case "queue": {
           const handler = resource.config.handler as string | undefined;
-          if (handler) {
+          if (typeof handler === "string" && handler) {
             const [filePath] = handler.split(".");
             handlers.push({
               name: `queue-${resource.name}`,
-              entryPoint: `${filePath}.ts`,
+              entryPoint: `${filePath || handler}.ts`,
             });
           }
           break;
         }
         case "cron": {
           const handler = resource.config.handler as string | undefined;
-          if (handler) {
+          if (typeof handler === "string" && handler) {
             const [filePath] = handler.split(".");
             handlers.push({
               name: `cron-${resource.name}`,
-              entryPoint: `${filePath}.ts`,
+              entryPoint: `${filePath || handler}.ts`,
             });
           }
           break;

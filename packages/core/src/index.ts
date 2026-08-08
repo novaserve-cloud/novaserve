@@ -45,8 +45,32 @@ export type {
   ValidationResult,
 } from "./types/provider.js";
 
+// Nova IR & Compiler
+export { NovaCompiler } from "./compiler/compiler.js";
+export { validateCapabilities, KNOWN_PROVIDER_CAPABILITIES } from "./compiler/capabilities.js";
+export type { CapabilityName, CapabilityCheckResult } from "./compiler/capabilities.js";
+export { generateLeastPrivilegePermissions } from "./compiler/iam.js";
 export type {
-  NovaEvent,
-  EventType,
-  EventHandler,
-} from "./types/events.js";
+  NovaIRGraph,
+  NovaIRResource,
+  NovaIRResourceType,
+  NovaIRPermission,
+  NovaIROutput,
+} from "./ir/schema.js";
+
+// Planner & Diff
+export { NovaPlanner } from "./deployer/planner.js";
+export type { NovaPlanResult, NovaPlanAction, ResourceDiffItem } from "./deployer/planner.js";
+
+// Intelligence & Diagnostics
+export { NovaSecurityScanner } from "./security/scanner.js";
+export type { SecurityReport, SecurityFinding, SecuritySeverity } from "./security/scanner.js";
+export { NovaDoctorEngine } from "./doctor/engine.js";
+export type { DoctorReport, DoctorCheckItem } from "./doctor/engine.js";
+export { NovaCostEstimator } from "./cost/estimator.js";
+export type { CostEstimateReport, ResourceCostItem } from "./cost/estimator.js";
+
+// Events & Replay
+export { NovaEventBus } from "./events/bus.js";
+export type { RecordedEvent } from "./events/bus.js";
+

@@ -67,6 +67,19 @@ importers:
         specifier: ^5.4.1
         version: 5.4.21(@types/node@22.20.1)
 
+  my-nova-app:
+    dependencies:
+      novaserve:
+        specifier: workspace:*
+        version: link:../packages/cli
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   packages/auth:
     dependencies:
       novaserve-runtime:

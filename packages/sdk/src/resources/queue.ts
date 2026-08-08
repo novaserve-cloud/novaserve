@@ -59,14 +59,12 @@ export interface QueueResource extends ResourceDefinition {
  * ```
  */
 export const queue = {
-  create(name: string, config: QueueConfig): QueueResource {
+  create(name: string, config?: Partial<QueueConfig>): QueueResource {
     if (!name) {
       throw new Error("[NovaServe] Queue name is required");
     }
 
-    if (!config.handler) {
-      throw new Error(`[NovaServe] Queue "${name}" requires a handler`);
-    }
+    const handler = config?.handler || `src/handlers/${name}.process`;
 
     return {
       _type: "queue",
@@ -81,6 +79,7 @@ export const queue = {
         retention: "4d",
         delay: 0,
         ...config,
+        handler,
       } as QueueConfig & Record<string, unknown>,
     };
   },

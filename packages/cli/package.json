@@ -27,6 +27,18 @@
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime.d.ts",
+      "import": "./dist/runtime.js",
+      "default": "./dist/runtime.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -35,15 +47,15 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "novaserve-sdk": "^1.0.3",
-    "novaserve-core": "^1.0.3",
-    "novaserve-runtime": "^1.0.3",
-    "novaserve-provider-local": "^1.0.3",
-    "novaserve-provider-aws": "^1.0.3",
-    "novaserve-provider-azure": "^1.0.3",
-    "novaserve-provider-gcp": "^1.0.3",
-    "novaserve-provider-cloudflare": "^1.0.3",
-    "novaserve-provider-docker": "^1.0.3",
+    "novaserve-sdk": "workspace:*",
+    "novaserve-core": "workspace:*",
+    "novaserve-runtime": "workspace:*",
+    "novaserve-provider-local": "workspace:*",
+    "novaserve-provider-aws": "workspace:*",
+    "novaserve-provider-azure": "workspace:*",
+    "novaserve-provider-gcp": "workspace:*",
+    "novaserve-provider-cloudflare": "workspace:*",
+    "novaserve-provider-docker": "workspace:*",
     "commander": "^13.0.0",
     "chalk": "^5.4.0",
     "ora": "^8.0.0",

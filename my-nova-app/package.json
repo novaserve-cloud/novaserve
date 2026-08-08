@@ -10,7 +10,7 @@
     "destroy": "nova destroy"
   },
   "dependencies": {
-    "novaserve": "^0.1.0"
+    "novaserve": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

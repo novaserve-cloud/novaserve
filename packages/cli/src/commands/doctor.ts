@@ -1,136 +1,62 @@
 /**
- * nova doctor — Check system health
+ * `nova doctor` — Signature System Diagnostic & Repair Engine
  *
- * Validates the development environment and configuration.
+ * Inspects Node/Bun, credentials, bundle sizes, IAM policies, public buckets,
+ * missing DLQs, and supports deterministic --fix options.
  */
 
 import { Command } from "commander";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
-import { execSync } from "node:child_process";
-import { logger } from "../utils/logger.js";
-
-interface Check {
-  name: string;
-  check: () => { ok: boolean; message: string };
-}
+import chalk from "chalk";
+import { NovaCompiler, NovaDoctorEngine, toResource } from "novaserve-core";
+import { loadConfig } from "../utils/config-loader.js";
 
 export function doctorCommand(): Command {
   return new Command("doctor")
-    .description("Check system health and configuration")
-    .action(async () => {
-      logger.info("Running system checks...\n");
+    .description("Perform signature health, security, and bundle diagnostics with optional auto-fix")
+    .option("--fix", "Automatically fix safe and deterministic diagnostic issues", false)
+    .action(async (options) => {
+      console.log(chalk.bold.yellow("\n◆ NovaServe Doctor Diagnostics\n"));
 
-      const checks: Check[] = [
-        {
-          name: "Node.js",
-          check: () => {
-            const version = process.version;
-            const major = parseInt(version.slice(1).split(".")[0]!, 10);
-            return {
-              ok: major >= 20,
-              message: major >= 20
-                ? `${version} ✓`
-                : `${version} (requires >= 20)`,
-            };
-          },
-        },
-        {
-          name: "npm",
-          check: () => {
-            try {
-              const version = execSync("npm --version", { encoding: "utf-8" }).trim();
-              return { ok: true, message: `v${version} ✓` };
-            } catch {
-              return { ok: false, message: "Not found" };
-            }
-          },
-        },
-        {
-          name: "pnpm",
-          check: () => {
-            try {
-              const version = execSync("pnpm --version", { encoding: "utf-8" }).trim();
-              return { ok: true, message: `v${version} ✓` };
-            } catch {
-              return { ok: false, message: "Not installed (optional)" };
-            }
-          },
-        },
-        {
-          name: "Git",
-          check: () => {
-            try {
-              const version = execSync("git --version", { encoding: "utf-8" }).trim();
-              return { ok: true, message: `${version} ✓` };
-            } catch {
-              return { ok: false, message: "Not found" };
-            }
-          },
-        },
-        {
-          name: "Config File",
-          check: () => {
-            const configFiles = [
-              "nova.config.ts",
-              "nova.config.js",
-              "nova.config.mts",
-            ];
-            const found = configFiles.find((f) =>
-              existsSync(join(process.cwd(), f))
-            );
-            return {
-              ok: !!found,
-              message: found ? `${found} ✓` : "Not found (run nova init)",
-            };
-          },
-        },
-        {
-          name: "AWS CLI",
-          check: () => {
-            try {
-              const version = execSync("aws --version", { encoding: "utf-8" }).trim();
-              return { ok: true, message: `${version.split(" ")[0]} ✓` };
-            } catch {
-              return { ok: false, message: "Not installed (needed for AWS deployments)" };
-            }
-          },
-        },
-        {
-          name: "Docker",
-          check: () => {
-            try {
-              const version = execSync("docker --version", { encoding: "utf-8" }).trim();
-              return { ok: true, message: `${version.split(",")[0]} ✓` };
-            } catch {
-              return { ok: false, message: "Not installed (optional)" };
-            }
-          },
-        },
-      ];
+      let irGraph;
+      try {
+        const app = await loadConfig();
+        const coreResources = (app.resources || []).map((r: any) => toResource(r));
+        const compiled = NovaCompiler.compile({
+          appName: app.name || "nova-app",
+          resources: coreResources,
+        });
+        irGraph = compiled.ir;
+      } catch {
+        // Continue diagnosis without IR if config missing
+      }
 
-      let allPassed = true;
+      const report = NovaDoctorEngine.diagnose(irGraph);
 
-      for (const check of checks) {
-        const result = check.check();
-        if (result.ok) {
-          logger.success(`${check.name.padEnd(15)} ${result.message}`);
+      for (const check of report.checks) {
+        if (check.status === "pass") {
+          console.log(chalk.green(`  ✓ ${check.title}`));
+        } else if (check.status === "warn") {
+          console.log(chalk.yellow(`  ⚠ ${check.title} — ${check.message}`));
         } else {
-          logger.warn(`${check.name.padEnd(15)} ${result.message}`);
-          if (check.name === "Node.js" || check.name === "Config File") {
-            allPassed = false;
-          }
+          console.log(chalk.red(`  ✗ ${check.title} — ${check.message}`));
         }
       }
 
-      logger.blank();
+      console.log(`\nDiagnostic Summary: ${chalk.green(`${report.passedCount} Passed`)} | ${chalk.yellow(`${report.warningCount} Warnings`)} | ${chalk.red(`${report.failedCount} Failed`)}\n`);
 
-      if (allPassed) {
-        logger.success("All required checks passed! You're ready to go. 🚀");
-      } else {
-        logger.warn("Some checks failed. Fix the issues above before proceeding.");
+      if (options.fix) {
+        console.log(chalk.bold.cyan("Applying safe auto-fixes..."));
+        const fixResult = NovaDoctorEngine.fix(report);
+        if (fixResult.fixedCount > 0) {
+          for (const item of fixResult.fixedItems) {
+            console.log(chalk.green(`  ✓ ${item}`));
+          }
+          console.log(chalk.bold.green(`\nApplied ${fixResult.fixedCount} automatic fixes successfully.\n`));
+        } else {
+          console.log(chalk.gray("No auto-fixable issues detected.\n"));
+        }
+      } else if (report.warningCount > 0) {
+        console.log(chalk.gray("Tip: Run `nova doctor --fix` to automatically repair safe configuration warnings.\n"));
       }
-
-      logger.blank();
     });
 }

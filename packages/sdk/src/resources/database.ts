@@ -44,52 +44,43 @@ export interface DatabaseResource extends ResourceDefinition {
   readonly _config: DatabaseConfig & { engine: DatabaseEngine } & Record<string, unknown>;
 }
 
-/**
- * Database resource builder.
- *
- * @example
- * ```ts
- * // Serverless Postgres
- * database.postgres({ scaling: { min: 0, max: 2 } })
- *
- * // MySQL with fixed size
- * database.mysql({ size: "small" })
- *
- * // DynamoDB
- * database.dynamodb()
- *
- * // MongoDB
- * database.mongodb()
- * ```
- */
 export const database = {
-  postgres(config: DatabaseConfig = {}): DatabaseResource {
-    return createDatabase("postgres", config);
+  postgres(nameOrConfig?: string | DatabaseConfig, config: DatabaseConfig = {}): DatabaseResource {
+    return createDatabase("postgres", nameOrConfig, config);
   },
 
-  mysql(config: DatabaseConfig = {}): DatabaseResource {
-    return createDatabase("mysql", config);
+  mysql(nameOrConfig?: string | DatabaseConfig, config: DatabaseConfig = {}): DatabaseResource {
+    return createDatabase("mysql", nameOrConfig, config);
   },
 
-  mongodb(config: DatabaseConfig = {}): DatabaseResource {
-    return createDatabase("mongodb", config);
+  mongodb(nameOrConfig?: string | DatabaseConfig, config: DatabaseConfig = {}): DatabaseResource {
+    return createDatabase("mongodb", nameOrConfig, config);
   },
 
-  dynamodb(config: DatabaseConfig = {}): DatabaseResource {
-    return createDatabase("dynamodb", config);
+  dynamodb(nameOrConfig?: string | DatabaseConfig, config: DatabaseConfig = {}): DatabaseResource {
+    return createDatabase("dynamodb", nameOrConfig, config);
   },
 };
 
-function createDatabase(engine: DatabaseEngine, config: DatabaseConfig): DatabaseResource {
+function createDatabase(
+  engine: DatabaseEngine,
+  nameOrConfig?: string | DatabaseConfig,
+  overrideConfig: DatabaseConfig = {}
+): DatabaseResource {
+  const isNameString = typeof nameOrConfig === "string";
+  const name = isNameString ? nameOrConfig : nameOrConfig?.name || engine;
+  const baseConfig = isNameString ? overrideConfig : nameOrConfig || {};
+
   return {
     _type: "database",
-    _name: config.name || engine,
+    _name: name,
     _config: {
       engine,
+      name,
       autoPause: true,
       backupRetentionDays: 7,
       deletionProtection: false,
-      ...config,
+      ...baseConfig,
     } as DatabaseConfig & { engine: DatabaseEngine } & Record<string, unknown>,
   };
 }

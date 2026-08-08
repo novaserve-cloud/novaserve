@@ -1,4 +1,4 @@
-import { defineApp, api } from "novaserve";
+import { defineApp, api, storage, queue, database } from "novaserve";
 
 export default defineApp({
   name: "my-nova-app",
@@ -14,7 +14,17 @@ export default defineApp({
         "POST /users": "src/handlers/users.create",
         "GET /users/:id": "src/handlers/users.get",
       },
-      cors: true,
+      cors: {
+        origins: ["https://app.novaserve.dev"],
+      },
     }),
+
+    uploads: storage.bucket("uploads"),
+
+    emailQueue: queue.create("emails", {
+      handler: "src/handlers/email.process",
+    }),
+
+    mainDb: database.postgres("main"),
   },
 });
