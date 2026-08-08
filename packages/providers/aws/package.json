@@ -1,6 +1,6 @@
 {
   "name": "novaserve-provider-aws",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "NovaServe AWS Provider — Deploy to AWS Lambda, API Gateway, S3, SQS",
   "type": "module",
   "main": "./dist/index.js",

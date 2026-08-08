@@ -1,6 +1,6 @@
 {
   "name": "novaserve-core",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "NovaServe Core Engine — Config parsing, graph resolution, and deployment engine",
   "type": "module",
   "main": "dist/index.js",
