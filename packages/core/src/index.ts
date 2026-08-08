@@ -74,3 +74,10 @@ export type { CostEstimateReport, ResourceCostItem } from "./cost/estimator.js";
 export { NovaEventBus } from "./events/bus.js";
 export type { RecordedEvent } from "./events/bus.js";
 
+// Drift & Plugins
+export { NovaDriftEngine } from "./deployer/drift.js";
+export type { DriftReport, DriftItem } from "./deployer/drift.js";
+export { NovaPluginManager } from "./plugins/manager.js";
+export type { NovaPluginPackage, PluginCapability } from "./plugins/manager.js";
+
+

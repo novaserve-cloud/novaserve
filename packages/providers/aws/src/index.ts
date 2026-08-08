@@ -5,3 +5,5 @@
  */
 
 export { AWSProvider } from "./provider.js";
+export { AWSLiveStateInspector } from "./inspector.js";
+export type { ObservedResourceState } from "./inspector.js";

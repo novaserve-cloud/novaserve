@@ -13,9 +13,9 @@ export function planCommand(): Command {
   return new Command("plan")
     .description("Generate and preview infrastructure changes from Nova IR")
     .option("-p, --provider <name>", "Target cloud provider (aws, docker, cloudflare)", "aws")
+    .option("--json", "Output execution plan as raw machine-readable JSON", false)
+    .option("--ci", "Run in non-interactive CI mode", false)
     .action(async (options) => {
-      console.log(chalk.bold.yellow("\n◆ NovaServe Plan\n"));
-
       try {
         const app = await loadConfig();
         const coreResources = (app.resources || []).map((r: any) => toResource(r));
@@ -27,6 +27,15 @@ export function planCommand(): Command {
 
         const plan = NovaPlanner.plan(compileResult.ir, {}, options.provider);
 
+        if (options.json) {
+          console.log(JSON.stringify({ plan, validation: compileResult.capabilityValidation }, null, 2));
+          return;
+        }
+
+        if (!options.ci) {
+          console.log(chalk.bold.yellow("\n◆ NovaServe Plan\n"));
+        }
+
         console.log(`Application: ${chalk.cyan(plan.appName)}`);
         console.log(`Provider:    ${chalk.bold.magenta(plan.provider.toUpperCase())}`);
         console.log(`IR Hash:     ${chalk.gray(plan.irHash.slice(0, 8))}\n`);
@@ -37,6 +46,7 @@ export function planCommand(): Command {
             console.log(chalk.red(`  ✗ ${err.message}`));
           }
           console.log("");
+          if (options.ci) process.exit(3);
         }
 
         console.log(chalk.bold("Resources:"));
@@ -57,6 +67,7 @@ export function planCommand(): Command {
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         console.log(chalk.red(`Plan failed: ${msg}`));
+        if (options.ci) process.exit(1);
       }
     });
 }

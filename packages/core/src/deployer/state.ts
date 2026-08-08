@@ -1,22 +1,17 @@
 /**
- * State Manager
+ * State Manager & Concurrent Deployment Lock Engine
  *
- * Persists deployment state using SQLite.
- * Tracks deployed resources, config hashes, and outputs
- * to enable incremental deployments and rollbacks.
+ * Persists deployment state graph, tracks resource hashes, outputs,
+ * enforces deployment locking to prevent concurrent state corruption,
+ * and performs state integrity verification.
  */
 
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
-import type { ResolvedResource, ResourceStatus } from "../types/resources.js";
+import type { ResolvedResource } from "../types/resources.js";
 
-/**
- * In-memory state store (SQLite integration in production).
- * For MVP, we use a JSON file-based approach.
- */
-
-interface DeploymentRecord {
+export interface DeploymentRecord {
   id: string;
   appName: string;
   environment: string;
@@ -24,6 +19,14 @@ interface DeploymentRecord {
   status: "deployed" | "failed" | "rolled_back";
   resources: ResolvedResource[];
   createdAt: string;
+}
+
+export interface StateLockInfo {
+  lockId: string;
+  appName: string;
+  environment: string;
+  user: string;
+  startedIso: string;
 }
 
 export class StateManager {
@@ -40,23 +43,80 @@ export class StateManager {
     this.load();
   }
 
-  /**
-   * Get currently deployed resources for an app+environment.
-   */
-  getResources(appName: string, environment: string): ResolvedResource[] {
+  /** Acquire an exclusive file lock to prevent concurrent deployments */
+  public acquireLock(appName: string, environment: string, user = "developer"): StateLockInfo {
+    const lockPath = join(this.stateDir, `${appName}-${environment}.lock`);
+    if (existsSync(lockPath)) {
+      try {
+        const raw = readFileSync(lockPath, "utf-8");
+        const lock = JSON.parse(raw) as StateLockInfo;
+        throw new Error(
+          `[NovaServe Lock] Deployment already in progress for "${appName}" (${environment}).\n` +
+            `Lock ID: ${lock.lockId} | Started: ${lock.startedIso} | User: ${lock.user}`
+        );
+      } catch (err: unknown) {
+        if (err instanceof Error && err.message.includes("[NovaServe Lock]")) {
+          throw err;
+        }
+      }
+    }
+
+    const lockInfo: StateLockInfo = {
+      lockId: `lock-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      appName,
+      environment,
+      user,
+      startedIso: new Date().toISOString(),
+    };
+
+    writeFileSync(lockPath, JSON.stringify(lockInfo, null, 2));
+    return lockInfo;
+  }
+
+  /** Release an acquired deployment lock */
+  public releaseLock(appName: string, environment: string): void {
+    const lockPath = join(this.stateDir, `${appName}-${environment}.lock`);
+    if (existsSync(lockPath)) {
+      try {
+        unlinkSync(lockPath);
+      } catch {
+        // Ignore unlink failures
+      }
+    }
+  }
+
+  /** Verify integrity of state records */
+  public verifyState(appName: string, environment: string): { valid: boolean; issues: string[] } {
+    const issues: string[] = [];
+    const key = `${appName}:${environment}`;
+    const records = this.deployments.get(key) || [];
+
+    if (records.length === 0) {
+      return { valid: true, issues: [] };
+    }
+
+    for (const r of records) {
+      if (!r.id || !r.resources) {
+        issues.push(`Deployment record "${r.id || 'unknown'}" has missing structure.`);
+      }
+    }
+
+    return {
+      valid: issues.length === 0,
+      issues,
+    };
+  }
+
+  /** Get currently deployed resources for an app+environment */
+  public getResources(appName: string, environment: string): ResolvedResource[] {
     const key = `${appName}:${environment}`;
     const records = this.deployments.get(key) || [];
     const latest = records[records.length - 1];
     return latest?.resources || [];
   }
 
-  /**
-   * Get the previous deployment's resources (for rollback).
-   */
-  getPreviousDeployment(
-    appName: string,
-    environment: string
-  ): ResolvedResource[] | null {
+  /** Get the previous deployment's resources (for rollback) */
+  public getPreviousDeployment(appName: string, environment: string): ResolvedResource[] | null {
     const key = `${appName}:${environment}`;
     const records = this.deployments.get(key) || [];
 
@@ -64,10 +124,8 @@ export class StateManager {
     return records[records.length - 2]!.resources;
   }
 
-  /**
-   * Save a new deployment record.
-   */
-  saveDeployment(
+  /** Save a new deployment record */
+  public saveDeployment(
     appName: string,
     environment: string,
     provider: string,
@@ -91,7 +149,6 @@ export class StateManager {
 
     this.deployments.get(key)!.push(record);
 
-    // Keep only last 10 deployments
     const records = this.deployments.get(key)!;
     if (records.length > 10) {
       this.deployments.set(key, records.slice(-10));
@@ -100,30 +157,21 @@ export class StateManager {
     this.persist();
   }
 
-  /**
-   * Delete all deployment records for an app+environment.
-   */
-  deleteDeployment(appName: string, environment: string): void {
+  /** Delete all deployment records for an app+environment */
+  public deleteDeployment(appName: string, environment: string): void {
     const key = `${appName}:${environment}`;
     this.deployments.delete(key);
     this.persist();
   }
 
-  /**
-   * Get deployment history.
-   */
-  getHistory(
-    appName: string,
-    environment: string
-  ): DeploymentRecord[] {
+  /** Get deployment history */
+  public getHistory(appName: string, environment: string): DeploymentRecord[] {
     const key = `${appName}:${environment}`;
     return this.deployments.get(key) || [];
   }
 
-  /**
-   * Generate a config hash for change detection.
-   */
-  static hashConfig(config: Record<string, unknown>): string {
+  /** Generate a config hash for change detection */
+  public static hashConfig(config: Record<string, unknown>): string {
     return createHash("sha256")
       .update(JSON.stringify(config, Object.keys(config).sort()))
       .digest("hex");
@@ -139,12 +187,10 @@ export class StateManager {
     try {
       const filePath = join(this.stateDir, "deployments.json");
       if (existsSync(filePath)) {
-        const { readFileSync } = require("node:fs");
         const data = JSON.parse(readFileSync(filePath, "utf-8"));
         this.deployments = new Map(Object.entries(data));
       }
     } catch {
-      // Start fresh if state is corrupted
       this.deployments = new Map();
     }
   }
@@ -152,11 +198,10 @@ export class StateManager {
   private persist(): void {
     try {
       const filePath = join(this.stateDir, "deployments.json");
-      const { writeFileSync } = require("node:fs");
       const data = Object.fromEntries(this.deployments);
       writeFileSync(filePath, JSON.stringify(data, null, 2));
     } catch {
-      // Silently fail — state persistence is best-effort
+      // Best effort persist
     }
   }
 }

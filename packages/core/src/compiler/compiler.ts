@@ -19,15 +19,33 @@ export interface CompileOptions {
   resources: Resource[];
 }
 
+export interface IRValidationResult {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  cycleDetected?: string[];
+}
+
 export interface CompileResult {
   ir: NovaIRGraph;
   capabilityValidation: ReturnType<typeof validateCapabilities>;
+  validation: IRValidationResult;
 }
 
-/** Compute deterministic SHA256 config hash */
-function computeHash(content: unknown): string {
-  const jsonStr = JSON.stringify(content, Object.keys(content || {}).sort());
-  return createHash("sha256").update(jsonStr).digest("hex").slice(0, 16);
+/** Compute deterministic SHA256 config hash with sorted keys */
+export function computeCanonicalHash(content: unknown): string {
+  const sortedJson = JSON.stringify(content, (key, value) => {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      return Object.keys(value)
+        .sort()
+        .reduce((acc: Record<string, unknown>, k) => {
+          acc[k] = value[k];
+          return acc;
+        }, {});
+    }
+    return value;
+  });
+  return createHash("sha256").update(sortedJson).digest("hex").slice(0, 16);
 }
 
 /** Map generic ResourceType to NovaIRResourceType */
@@ -61,7 +79,81 @@ function mapCapabilityName(type: string): CapabilityName {
   }
 }
 
+/** Cycle detection algorithm for Nova IR DAG topology */
+function detectCycles(resources: Record<string, NovaIRResource>): string[] | null {
+  const visited = new Set<string>();
+  const recStack = new Set<string>();
+  let detectedPath: string[] | null = null;
+
+  function dfs(nodeId: string, path: string[]): boolean {
+    visited.add(nodeId);
+    recStack.add(nodeId);
+    path.push(nodeId);
+
+    const res = resources[nodeId];
+    if (res && res.dependencies) {
+      for (const depId of res.dependencies) {
+        if (!visited.has(depId)) {
+          if (dfs(depId, path)) return true;
+        } else if (recStack.has(depId)) {
+          path.push(depId);
+          detectedPath = [...path];
+          return true;
+        }
+      }
+    }
+
+    recStack.delete(nodeId);
+    path.pop();
+    return false;
+  }
+
+  for (const id of Object.keys(resources)) {
+    if (!visited.has(id)) {
+      if (dfs(id, [])) return detectedPath;
+    }
+  }
+
+  return null;
+}
+
 export class NovaCompiler {
+  /** Validate Nova IR Graph for missing dependencies, cycles, and schema rules */
+  public static validateIR(ir: NovaIRGraph): IRValidationResult {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    if (!ir || ir.schemaVersion !== "1.0.0") {
+      errors.push("Invalid Nova IR schema version. Required: '1.0.0'");
+    }
+
+    const resIds = new Set(Object.keys(ir.resources || {}));
+
+    // Check missing dependencies
+    for (const [id, res] of Object.entries(ir.resources || {})) {
+      for (const depId of res.dependencies || []) {
+        if (!resIds.has(depId)) {
+          errors.push(
+            `Resource "${res.name}" (${res.type}) references unknown dependency "${depId}". Resource "${depId}" does not exist in the Nova IR graph.`
+          );
+        }
+      }
+    }
+
+    // Check circular dependencies
+    const cycle = detectCycles(ir.resources || {});
+    if (cycle) {
+      errors.push(`Circular dependency cycle detected in graph topology: ${cycle.join(" → ")}`);
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings,
+      cycleDetected: cycle || undefined,
+    };
+  }
+
   /** Compile application resources into Nova IR Graph */
   public static compile(options: CompileOptions): CompileResult {
     const environment = options.environment || "development";
@@ -76,7 +168,7 @@ export class NovaCompiler {
       const resourceId = `${r.type}-${r.name}`;
       const irType = mapResourceType(r.type);
       const capName = mapCapabilityName(r.type);
-      const configHash = computeHash(r.config);
+      const configHash = computeCanonicalHash(r.config);
 
       irResources[resourceId] = {
         id: resourceId,
@@ -88,7 +180,6 @@ export class NovaCompiler {
         requiredCapabilities: [capName],
       };
 
-      // Add to requested capabilities
       const engine = typeof r.config.engine === "string" ? r.config.engine : undefined;
       requestedCapabilities.push({
         resourceId,
@@ -96,7 +187,6 @@ export class NovaCompiler {
         engine,
       });
 
-      // Record graph dependencies
       if (r.dependencies && r.dependencies.length > 0) {
         for (const depId of r.dependencies) {
           dependencies.push({
@@ -108,14 +198,10 @@ export class NovaCompiler {
       }
     }
 
-    // Validate Capabilities against target provider matrix
     const capValidation = validateCapabilities(requestedCapabilities, targetProvider);
-
-    // Infer least-privilege IAM permissions
     const permissions = generateLeastPrivilegePermissions(irResources, dependencies);
 
-    // Calculate composite graph hash
-    const appHash = computeHash({
+    const appHash = computeCanonicalHash({
       appName: options.appName,
       environment,
       region,
@@ -140,9 +226,12 @@ export class NovaCompiler {
       outputs: {},
     };
 
+    const irValidation = this.validateIR(irGraph);
+
     return {
       ir: irGraph,
       capabilityValidation: capValidation,
+      validation: irValidation,
     };
   }
 }

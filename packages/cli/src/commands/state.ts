@@ -68,6 +68,33 @@ export function stateCommand(): Command {
     });
 
   cmd
+    .command("verify")
+    .description("Verify state file integrity and lock status")
+    .option("-e, --env <environment>", "Target environment", "production")
+    .action(async (options) => {
+      console.log(chalk.bold.yellow("\n◆ NovaServe State Integrity Check\n"));
+
+      try {
+        const app = await loadConfig();
+        const stateMgr = new StateManager(process.cwd());
+        const verification = stateMgr.verifyState(app.name || "nova-app", options.env);
+
+        if (verification.valid) {
+          console.log(chalk.bold.green("✓ State file integrity verified. Zero corruption or schema errors detected.\n"));
+        } else {
+          console.log(chalk.bold.red("✗ State Integrity Issues:"));
+          for (const issue of verification.issues) {
+            console.log(chalk.red(`  • ${issue}`));
+          }
+          console.log("");
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.log(chalk.red(`State verification failed: ${msg}`));
+      }
+    });
+
+  cmd
     .command("export")
     .description("Export raw deployment state graph as JSON")
     .option("-e, --env <environment>", "Target environment", "production")

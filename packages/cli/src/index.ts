@@ -13,7 +13,9 @@
  *   nova diff      — Display granular resource attribute changes
  *   nova graph     — Visualize dependency DAG & least-privilege IAM graph
  *   nova state     — Inspect deployment state graph and lock status
- *   nova deploy    — Execute parallel incremental cloud deployment
+ *   nova drift     — Detect live infrastructure configuration drift & auto-fix
+ *   nova deploy    — Execute parallel incremental cloud deployment (supports --preview)
+ *   nova promote   — Promote application IR graph across environments (staging → production)
  *   nova destroy   — Safely tear down infrastructure
  *   nova logs      — View live correlated resource streams
  *   nova events    — Inspect event payloads and trigger local event replays
@@ -21,6 +23,8 @@
  *   nova security  — Audit infrastructure for wildcard IAM, public storage, & flaws
  *   nova cost      — Infrastructure cost intelligence & optimization advice
  *   nova ai        — Intelligent AI infrastructure assistant
+ *   nova add       — Add a plugin package from the NovaServe capability marketplace
+ *   nova plugins   — List installed capability-gated plugins
  *   nova dashboard — Launch local visual management console
  */
 
@@ -30,10 +34,13 @@ import { initCommand } from "./commands/init.js";
 import { devCommand } from "./commands/dev.js";
 import { buildCommand } from "./commands/build.js";
 import { planCommand } from "./commands/plan.js";
+import { irCommand } from "./commands/ir.js";
 import { diffCommand } from "./commands/diff.js";
 import { graphCommand } from "./commands/graph.js";
 import { stateCommand } from "./commands/state.js";
+import { driftCommand } from "./commands/drift.js";
 import { deployCommand } from "./commands/deploy.js";
+import { promoteCommand } from "./commands/promote.js";
 import { destroyCommand } from "./commands/destroy.js";
 import { logsCommand } from "./commands/logs.js";
 import { eventsCommand } from "./commands/events.js";
@@ -41,6 +48,7 @@ import { doctorCommand } from "./commands/doctor.js";
 import { securityCommand } from "./commands/security.js";
 import { costCommand } from "./commands/cost.js";
 import { aiCommand } from "./commands/ai.js";
+import { addCommand, pluginsCommand } from "./commands/plugins.js";
 import { dashboardCommand } from "./commands/dashboard.js";
 
 const program = new Command();
@@ -58,10 +66,13 @@ program.addCommand(initCommand());
 program.addCommand(devCommand());
 program.addCommand(buildCommand());
 program.addCommand(planCommand());
+program.addCommand(irCommand());
 program.addCommand(diffCommand());
 program.addCommand(graphCommand());
 program.addCommand(stateCommand());
+program.addCommand(driftCommand());
 program.addCommand(deployCommand());
+program.addCommand(promoteCommand());
 program.addCommand(destroyCommand());
 program.addCommand(logsCommand());
 program.addCommand(eventsCommand());
@@ -69,6 +80,8 @@ program.addCommand(doctorCommand());
 program.addCommand(securityCommand());
 program.addCommand(costCommand());
 program.addCommand(aiCommand());
+program.addCommand(addCommand());
+program.addCommand(pluginsCommand());
 program.addCommand(dashboardCommand());
 
 // Re-export SDK builders for seamless import from "novaserve"

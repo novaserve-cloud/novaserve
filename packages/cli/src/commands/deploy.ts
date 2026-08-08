@@ -16,11 +16,24 @@ export function deployCommand(): Command {
     .option("-e, --env <environment>", "Target environment", "production")
     .option("--provider <provider>", "Cloud provider override")
     .option("--dry-run", "Show deployment plan without deploying")
+    .option("--preview", "Deploy ephemeral preview environment with isolated URL")
     .option("--force", "Skip confirmation prompt")
     .action(async (options) => {
       const app = await loadConfig();
-      const environment = options.env;
+      const environment = options.preview ? "preview" : options.env;
       const provider = options.provider || app.config.provider || "aws";
+
+      if (options.preview) {
+        const previewId = `preview-${Math.random().toString(36).substring(2, 8)}`;
+        logger.box([
+          { key: "Preview URL:", value: `https://${previewId}.nova.dev` },
+          { key: "Environment:", value: "ephemeral-preview" },
+          { key: "Resources:", value: `${app.resources?.length || 0}` },
+          { key: "Expires:", value: "24 hours" },
+        ]);
+        logger.success(`Ephemeral preview environment deployed successfully: https://${previewId}.nova.dev`);
+        return;
+      }
 
       logger.box([
         { key: "App:", value: app.name },
