@@ -7,47 +7,30 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
+        sans: ['"Geist"', '"Inter"', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['"Geist Mono"', '"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
+
       colors: {
-        background: '#090a0f',
-        surface: {
-          DEFAULT: '#11131b',
-          elevated: '#181b26',
-          hover: '#1f2332',
-        },
         brand: {
-          yellow: '#facc15', // Vibrant Electric Yellow
-          yellowBright: '#fef08a',
-          yellowDark: '#ca8a04',
-          white: '#ffffff',
-          slate: '#94a3b8',
+          yellow: '#FACC15', // Primary brand yellow
+          yellowHover: '#EAB308', // Dark yellow for hover
+          yellowLight: '#FEF9C3', // Light yellow for active tint
+          yellowBorder: '#FDE047',
+          black: '#111111',
+          grayText: '#6B7280',
+          border: '#E5E7EB',
+          bgLight: '#F9FAFB',
         }
       },
       boxShadow: {
-        'yellow-glow': '0 0 25px -5px rgba(250, 204, 21, 0.35)',
-        'yellow-glow-lg': '0 0 40px -5px rgba(250, 204, 21, 0.45)',
-        'white-glow': '0 0 25px -5px rgba(255, 255, 255, 0.25)',
-        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-      },
-      animation: {
-        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'glow-pulse': 'glowPulse 2s ease-in-out infinite alternate',
-        'flow-line': 'flowLine 10s linear infinite',
-      },
-      keyframes: {
-        glowPulse: {
-          '0%': { boxShadow: '0 0 15px rgba(250, 204, 21, 0.2)' },
-          '100%': { boxShadow: '0 0 30px rgba(250, 204, 21, 0.6)' },
-        },
-        flowLine: {
-          '0%': { strokeDashoffset: '100' },
-          '100%': { strokeDashoffset: '0' },
-        }
+        'subtle': '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.08)',
+        'dropdown': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.05)',
       }
     },
   },
   plugins: [],
 }
+
 
