@@ -25,7 +25,7 @@ export { defineApp } from "./app.js";
 
 // Resource builders
 export { api } from "./resources/api.js";
-export { fn } from "./resources/function.js";
+export { fn, fn as function_ } from "./resources/function.js";
 export { storage } from "./resources/storage.js";
 export { database } from "./resources/database.js";
 export { queue } from "./resources/queue.js";

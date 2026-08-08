@@ -61,6 +61,8 @@ export type {
 // Planner & Diff
 export { NovaPlanner } from "./deployer/planner.js";
 export type { NovaPlanResult, NovaPlanAction, ResourceDiffItem } from "./deployer/planner.js";
+export { NovaImpactAnalyzer } from "./planner/impact.js";
+export type { ImpactAnalysisResult } from "./planner/impact.js";
 
 // Intelligence & Diagnostics
 export { NovaSecurityScanner } from "./security/scanner.js";
