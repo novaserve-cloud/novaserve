@@ -1,11 +1,12 @@
 /**
  * Dependency Graph
  *
- * Builds a DAG (Directed Acyclic Graph) of resources
+ * Builds a DAG (Directed Acyclic Graph) of resources directly from Nova IR
  * to determine deployment order and enable parallel execution.
  */
 
 import type { Resource } from "../types/resources.js";
+import type { NovaIRGraph } from "../ir/schema.js";
 
 export interface GraphNode {
   resource: Resource;
@@ -16,6 +17,19 @@ export interface GraphNode {
 
 export class DependencyGraph {
   private nodes = new Map<string, GraphNode>();
+
+  /**
+   * Build canonical DAG topology directly from Nova IR graph.
+   */
+  buildFromIR(ir: NovaIRGraph): void {
+    const resources: Resource[] = Object.values(ir.resources).map((r) => ({
+      type: r.type as any,
+      name: r.name,
+      config: r.config,
+      dependencies: r.dependencies,
+    }));
+    this.build(resources);
+  }
 
   /**
    * Build the dependency graph from a list of resources.
@@ -121,7 +135,6 @@ export class DependencyGraph {
   }
 
   private calculateDepths(): void {
-    // BFS from root nodes (no dependencies)
     const queue: string[] = [];
 
     for (const [id, node] of this.nodes) {

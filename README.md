@@ -1,14 +1,13 @@
 <p align="center">
   <h1 align="center">◆ NovaServe</h1>
   <p align="center">
-    <strong>The next-generation, cloud-agnostic serverless development framework.</strong>
+    <strong>A TypeScript-First Application Compiler for Cloud Infrastructure</strong>
   </p>
   <p align="center">
-    As simple as Vercel · As powerful as Terraform · As fast as Bun
+    Define your application. NovaServe compiles, plans, deploys, and observes your infrastructure.
   </p>
   <p align="center">
     <a href="https://www.npmjs.com/package/novaserve"><img src="https://img.shields.io/npm/v/novaserve.svg?style=flat-square&color=facc15" alt="npm version" /></a>
-    <a href="https://www.npmjs.com/package/novaserve"><img src="https://img.shields.io/npm/dm/novaserve.svg?style=flat-square" alt="npm downloads" /></a>
     <a href="https://github.com/sazamansari/NovaServe-/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="license" /></a>
     <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg?style=flat-square" alt="node version" /></a>
   </p>
@@ -18,14 +17,18 @@
 
 ## What is NovaServe?
 
-NovaServe is a TypeScript-first serverless framework designed to replace hundreds of lines of complex YAML configuration with clean, type-safe code. Write your infrastructure once in TypeScript and deploy seamlessly to **AWS**, **Azure**, **GCP**, **Cloudflare**, **Docker**, or **Locally** with zero code changes.
+NovaServe is a **TypeScript application compiler for cloud infrastructure**. Instead of managing cloud-specific YAML files or imperative API scripts, developers declare application logic in TypeScript. NovaServe compiles the application into a provider-neutral, versioned **Nova Intermediate Representation (Nova IR 1.0.0)** graph, computes deterministic DAG topologies, generates fine-grained least-privilege IAM policies, and executes diff-driven cloud deployments.
+
+```text
+TypeScript App ──> Nova Compiler ──> Nova IR (1.0.0) ──> Infrastructure Graph ──> Plan / Diff ──> Deployment Engine ──> Providers
+```
 
 ```typescript
-// nova.config.ts — Zero YAML. 100% Type Safe.
-import { defineApp, api, storage, queue } from "novaserve";
+// nova.config.ts — Type-Safe Application Infrastructure
+import { defineApp, api, storage, queue, database } from "novaserve";
 
 export default defineApp({
-  name: "my-app",
+  name: "my-nova-app",
   region: "ap-south-1",
   runtime: "node20",
 
@@ -40,9 +43,13 @@ export default defineApp({
 
     uploads: storage.bucket("uploads", { maxSize: "10mb" }),
 
-    emailQueue: queue.create("emails", {
+    emails: queue.create("emails", {
       handler: "src/handlers/email.process",
       retries: 3,
+    }),
+
+    main: database.postgres("main", {
+      version: "15",
     }),
   },
 });
@@ -50,184 +57,60 @@ export default defineApp({
 
 ---
 
-## Key Features
+## Feature Status Matrix
 
-- 🚀 **TypeScript-First Infrastructure**: Full type safety, inline documentation, and IDE autocompletion for all cloud resources.
-- ☁️ **Cloud-Agnostic Engine**: Swap deployment targets (AWS Lambda, Cloudflare Workers, GCP, Azure, Docker, Local) without altering application code.
-- 📊 **Visual Control Center**: Built-in interactive topology DAG graph, live streaming console logs, and resource inspector via `nova dashboard`.
-- 🧠 **AI Terminal Copilot**: Terminal-native AI developer assistant via `nova ai`.
-- 🔐 **Built-in Authentication**: Zero-dependency JWT, OAuth 2.0 (GitHub, Google), and route protection middleware via `@novaserve/auth`.
-- ⚡ **Lightning Fast Local Emulator**: In-process dev server powered by Hono with instant hot reload.
-- 🔄 **Incremental DAG Deployment**: Topological dependency graph resolution that deploys only modified components.
+| Component | Status | Description |
+| :--- | :---: | :--- |
+| **Nova IR (1.0.0)** | ✅ Stable | Versioned, deterministic, provider-neutral IR schema & canonical SHA256 hashing (`nova ir validate`, `nova ir hash`). |
+| **Nova Compiler & DAG Engine** | ✅ Stable | Compiles TypeScript SDK definitions into dependency DAGs with cycle detection. |
+| **Least-Privilege IAM Generator** | ✅ Stable | Auto-derives exact resource-scoped IAM statements (`s3:PutObject` on `arn:aws:s3:::uploads/*`). |
+| **Capability Validation Matrix** | ✅ Stable | Checks provider engine capabilities; suggests Neon/Supabase alternatives when unsupported. |
+| **Planner & Plan Serialization** | ✅ Stable | Diff-driven execution plans, monthly cost estimates, and plan file saving (`nova plan --save plan.json`). |
+| **Concurrent State Lock Manager** | ✅ Stable | Process file locking preventing concurrent state corruption (`nova state verify`). |
+| **Deployment Journal & Retries** | ✅ Stable | Step-by-step journal (`PENDING`, `RUNNING`, `SUCCESS`, `FAILED`, `UNKNOWN`) for idempotent retries. |
+| **OpenTelemetry Telemetry Engine** | ✅ Stable | OpenTelemetry span context tracer & waterfall viewer (`nova trace <trace-id>`). |
+| **AWS Live State Inspector** | 🧪 Experimental | Live Cloud SDK reader inspecting Lambda, S3, SQS, API Gateway v2, & IAM states (`AWSLiveStateInspector`). |
+| **Drift Engine v2 & Safe Remediation** | ✅ Stable | Detects live vs expected configuration drift (`nova drift`, `nova drift --fix`). |
+| **Environment Promotion** | ✅ Stable | Promotes IR graph topologies across `staging` → `production` (`nova promote staging production`). |
+| **Ephemeral Preview Environments** | ✅ Stable | Deploys isolated preview URL environments (`nova deploy --preview`). |
+| **Capability-Gated Plugin System** | ✅ Stable | Plugin architecture with explicit capabilities (`add-resource`, `read-ir`, `transform-ir`). |
+| **Docker / Local Provider** | ✅ Stable | Local developer emulator powered by Hono with hot reload. |
+| **Cloudflare Provider** | 🧪 Experimental | Target adapter for Cloudflare Workers, R2, and KV. |
+| **GCP / Azure / Kubernetes** | 📋 Planned | Planned target adapters for future milestones. |
 
 ---
 
-## Installation
-
-Install the NovaServe CLI globally via npm, pnpm, or yarn:
+## Installation & CLI Usage
 
 ```bash
-npm install -g novaserve
-# or
+# 1. Install CLI globally
 pnpm add -g novaserve
+
+# 2. Inspect & validate Nova IR
+nova ir validate
+nova ir hash
+
+# 3. Generate deployment plan & cost estimate
+nova plan --save plan.json
+
+# 4. View dependency DAG & least-privilege IAM graph
+nova graph
+
+# 5. Check live infrastructure drift
+nova drift
+
+# 6. Audit infrastructure security
+nova security
+
+# 7. Run AI performance diagnosis
+nova ai diagnose
+
+# 8. View OpenTelemetry trace waterfall
+nova trace
 ```
-
-Or initialize a new project directly with `npx`:
-
-```bash
-npx nova init my-app
-```
-
----
-
-## Quick Start
-
-```bash
-# 1. Create a new project
-nova init my-app --template basic-api
-
-# 2. Enter project directory
-cd my-app
-
-# 3. Start local development server
-nova dev
-
-# 4. Open local visual dashboard
-nova dashboard
-
-# 5. Deploy to AWS / Cloud Provider
-nova deploy
-```
-
----
-
-## Usage Examples
-
-### 1. Synchronous & Asynchronous Handlers
-
-```typescript
-// src/handlers/users.ts
-import type { NovaContext } from "novaserve-runtime";
-
-// Synchronous JSON Handler
-export const list = (ctx: NovaContext) => {
-  return ctx.json({
-    status: "ok",
-    users: [
-      { id: 1, name: "Alice" },
-      { id: 2, name: "Bob" },
-    ],
-  });
-};
-
-// Asynchronous Async/Await Handler
-export const create = async (ctx: NovaContext) => {
-  const body = await ctx.body<{ name: string; email: string }>();
-
-  if (!body?.email) {
-    return ctx.badRequest("Email is required");
-  }
-
-  const user = { id: Date.now(), ...body };
-  return ctx.json({ user }, 201);
-};
-```
-
-### 2. Route Protection with `@novaserve/auth`
-
-```typescript
-// src/handlers/protected.ts
-import { requireAuth } from "novaserve-auth";
-import type { NovaContext } from "novaserve-runtime";
-
-export const profile = requireAuth(async (ctx: NovaContext) => {
-  const user = ctx.get("user");
-  return ctx.json({ profile: user });
-});
-```
-
----
-
-## Command Line Interface (CLI)
-
-Usage: `nova [command] [options]`
-
-| Command | Options | Description |
-|---|---|---|
-| `nova init [name]` | `--template <template>` | Scaffolds a new NovaServe application |
-| `nova dev` | `-p, --port <port>` | Launches local Hono dev server with hot reload |
-| `nova build` | `-e, --env <environment>` | Bundles serverless handlers using esbuild |
-| `nova deploy` | `--provider <provider>` | Deploys DAG infrastructure to the cloud |
-| `nova destroy` | `--force` | Removes all deployed cloud resources |
-| `nova logs [function]` | `-f, --follow` | Streams real-time function logs |
-| `nova doctor` | — | Checks system environment & credentials health |
-| `nova dashboard` | `-p, --port <port>` | Opens the local visual control dashboard |
-| `nova ai` | — | Launches the interactive terminal AI assistant |
-
----
-
-## API Reference (Resource Builders)
-
-| Function | Import | Description |
-|---|---|---|
-| `defineApp(config)` | `import { defineApp } from "novaserve"` | Primary application entrypoint configuration |
-| `api.create(options)` | `import { api } from "novaserve"` | Creates HTTP API Gateway with route handlers |
-| `fn.create(options)` | `import { fn } from "novaserve"` | Standalone serverless function definition |
-| `storage.bucket(name, options)` | `import { storage } from "novaserve"` | Object storage bucket (AWS S3, Cloudflare R2) |
-| `database.postgres(name, options)` | `import { database } from "novaserve"` | Managed relational PostgreSQL database |
-| `queue.create(name, options)` | `import { queue } from "novaserve"` | Message queue worker with retry policy |
-| `cron.schedule(expression, options)` | `import { cron } from "novaserve"` | Scheduled cron job worker |
-| `cache.redis(name, options)` | `import { cache } from "novaserve"` | Managed Redis in-memory cache |
-| `secret.define(name)` | `import { secret } from "novaserve"` | Encrypted environment secrets manager |
-
----
-
-## Deploy Anywhere
-
-Deploy your application to any cloud provider with zero code changes:
-
-```bash
-nova deploy                          # Default provider (AWS)
-nova deploy --provider azure        # Microsoft Azure
-nova deploy --provider gcp          # Google Cloud Platform
-nova deploy --provider cloudflare   # Cloudflare Workers
-nova deploy --provider docker       # Docker Containers
-nova deploy --provider local        # Local In-Process Engine
-```
-
----
-
-## Building & Testing
-
-To build and run tests across all monorepo packages:
-
-```bash
-# Install dependencies
-pnpm install
-
-# Build all packages
-pnpm build
-
-# Run unit test suite
-pnpm test
-
-# Run TypeScript type check
-pnpm typecheck
-```
-
----
-
-## Author & Maintainer
-
-Designed and built by **[Md Shadab Azam Ansari](https://md-shadab-azam-ansari.vercel.app/)**.
-
-- 🌐 **Portfolio**: [https://md-shadab-azam-ansari.vercel.app/](https://md-shadab-azam-ansari.vercel.app/)
-- 🐙 **GitHub**: [@sazamansari](https://github.com/sazamansari)
-- 📦 **NPM Registry**: [https://www.npmjs.com/package/novaserve](https://www.npmjs.com/package/novaserve)
 
 ---
 
 ## License
 
-[MIT](LICENSE) © Md Shadab Azam Ansari & NovaServe Contributors
-
+MIT © NovaServe Authors
