@@ -4,26 +4,41 @@ import type { NovaIRGraph } from "../ir/schema.js";
 
 describe("NovaPlanner & Diff Engine", () => {
   const baseIR: NovaIRGraph = {
-    version: "1.0.0",
-    app: { name: "test-app", environment: "production", hash: "a".repeat(64) },
+    schemaVersion: "1.0.0",
+    app: {
+      name: "test-app",
+      version: "1.0.0",
+      environment: "production",
+      hash: "a".repeat(64),
+    },
     resources: {
       "db-users": {
+        id: "db-users",
         name: "users",
         type: "database",
         config: { partitionKey: "id", engine: "dynamodb" },
         dependencies: [],
+        requiredCapabilities: [],
         configHash: "hash-v1",
       },
       "fn-hello": {
+        id: "fn-hello",
         name: "hello",
         type: "function",
         config: { memory: 256, timeout: 10 },
         dependencies: [],
+        requiredCapabilities: [],
         configHash: "hash-fn-v1",
       },
     },
+    dependencies: [],
+    capabilitiesRequired: [],
     permissions: [],
     outputs: {},
+    buildMetadata: {
+      createdIso: "2026-08-09T10:00:00.000Z",
+      novaVersion: "1.0.0",
+    },
   };
 
   it("generates CREATE actions for brand new resources", () => {
