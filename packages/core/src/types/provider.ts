@@ -39,6 +39,12 @@ export interface DeploymentPlanAction {
   reason: string;
   /** Estimated time */
   estimatedSeconds?: number;
+  /** Strategy for executing updates or replacements */
+  updateStrategy?: import("./lifecycle.js").UpdateStrategy;
+  /** Whether replacing this resource requires data migration */
+  requiresDataMigration?: boolean;
+  /** Warning message if replacing this stateful resource risks data loss */
+  dataLossWarning?: string;
   /** Resources this action depends on */
   dependsOn: string[];
 }

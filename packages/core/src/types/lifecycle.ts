@@ -1,9 +1,11 @@
 /**
  * Resource Lifecycle Contract & Capability Matrix
  *
- * Defines the standard lifecycle execution contract (create, update, replace, delete, observe)
- * and the machine-readable resource capability matrix for cloud infrastructure resources.
+ * Defines the standard lifecycle execution contract (create, update, replace, delete, observe),
+ * machine-readable resource capability matrix, and explicit update strategies.
  */
+
+export type UpdateStrategy = "in-place" | "create-before-destroy" | "destroy-before-create";
 
 export interface ResourceExecutor<TConfig = Record<string, unknown>, TState = Record<string, unknown>> {
   create(config: TConfig, appName: string, environment?: string): Promise<TState>;
@@ -19,6 +21,7 @@ export interface ResourceCapability {
   replace: boolean;
   delete: boolean;
   observe: boolean;
+  defaultStrategy: UpdateStrategy;
   immutableAttributes: string[];
 }
 
@@ -29,6 +32,7 @@ export const RESOURCE_CAPABILITY_MATRIX: Record<string, ResourceCapability> = {
     replace: true,
     delete: true,
     observe: true,
+    defaultStrategy: "in-place",
     immutableAttributes: ["architecture"],
   },
   api: {
@@ -37,6 +41,7 @@ export const RESOURCE_CAPABILITY_MATRIX: Record<string, ResourceCapability> = {
     replace: true,
     delete: true,
     observe: true,
+    defaultStrategy: "in-place",
     immutableAttributes: ["protocolType"],
   },
   storage: {
@@ -45,6 +50,7 @@ export const RESOURCE_CAPABILITY_MATRIX: Record<string, ResourceCapability> = {
     replace: true,
     delete: true,
     observe: true,
+    defaultStrategy: "in-place",
     immutableAttributes: ["bucketName"],
   },
   queue: {
@@ -53,6 +59,7 @@ export const RESOURCE_CAPABILITY_MATRIX: Record<string, ResourceCapability> = {
     replace: true,
     delete: true,
     observe: true,
+    defaultStrategy: "in-place",
     immutableAttributes: ["fifoQueue"],
   },
   database: {
@@ -61,6 +68,7 @@ export const RESOURCE_CAPABILITY_MATRIX: Record<string, ResourceCapability> = {
     replace: true,
     delete: true,
     observe: true,
+    defaultStrategy: "create-before-destroy",
     immutableAttributes: ["partitionKey", "sortKey", "engine"],
   },
   cache: {
@@ -69,6 +77,7 @@ export const RESOURCE_CAPABILITY_MATRIX: Record<string, ResourceCapability> = {
     replace: true,
     delete: true,
     observe: true,
+    defaultStrategy: "in-place",
     immutableAttributes: ["engine"],
   },
 };

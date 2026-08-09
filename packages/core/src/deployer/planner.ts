@@ -7,7 +7,7 @@
 
 import { createHash } from "node:crypto";
 import type { NovaIRGraph, NovaIRResource } from "../ir/schema.js";
-import { RESOURCE_CAPABILITY_MATRIX } from "../types/lifecycle.js";
+import { RESOURCE_CAPABILITY_MATRIX, type UpdateStrategy } from "../types/lifecycle.js";
 
 export interface ResourceDiffItem {
   attribute: string;
@@ -23,6 +23,9 @@ export interface NovaPlanAction {
   reason: string;
   estimatedSeconds: number;
   estimatedMonthlyCostUsd: number;
+  updateStrategy?: UpdateStrategy;
+  requiresDataMigration?: boolean;
+  dataLossWarning?: string;
   diffs?: ResourceDiffItem[];
   dependsOn: string[];
 }
@@ -116,6 +119,7 @@ export class NovaPlanner {
           reason: "New resource defined in Nova IR",
           estimatedSeconds: sec,
           estimatedMonthlyCostUsd: monthlyCost,
+          updateStrategy: "in-place",
           dependsOn: res.dependencies,
         });
         summary.create++;
@@ -141,6 +145,9 @@ export class NovaPlanner {
         const immutableAttr = diffs.find((d) => capability?.immutableAttributes?.includes(d.attribute));
 
         if (immutableAttr) {
+          const isStateful = res.type === "database" || res.type === "storage" || res.type === "cache";
+          const strategy: UpdateStrategy = res.type === "storage" ? "destroy-before-create" : "create-before-destroy";
+
           // Resource replacement (!=)
           actions.push({
             action: "replace",
@@ -150,6 +157,11 @@ export class NovaPlanner {
             reason: `Immutable attribute "${immutableAttr.attribute}" changed (${JSON.stringify(immutableAttr.oldValue)} → ${JSON.stringify(immutableAttr.newValue)}). Resource replacement required.`,
             estimatedSeconds: sec * 2,
             estimatedMonthlyCostUsd: monthlyCost,
+            updateStrategy: strategy,
+            requiresDataMigration: isStateful,
+            dataLossWarning: isStateful
+              ? `Stateful ${res.type} replacement risks data loss without a prior backup/snapshot.`
+              : undefined,
             diffs,
             dependsOn: res.dependencies,
           });
@@ -165,6 +177,7 @@ export class NovaPlanner {
             reason: `Config hash modified (${existing.configHash.slice(0, 7)} → ${res.configHash.slice(0, 7)})`,
             estimatedSeconds: sec,
             estimatedMonthlyCostUsd: monthlyCost,
+            updateStrategy: capability?.defaultStrategy || "in-place",
             diffs,
             dependsOn: res.dependencies,
           });
