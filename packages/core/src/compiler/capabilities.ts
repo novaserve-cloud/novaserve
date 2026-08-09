@@ -60,6 +60,22 @@ export const KNOWN_PROVIDER_CAPABILITIES: Record<string, ProviderCapabilityMatri
     },
     alternatives: {},
   },
+  azure: {
+    providerName: "azure",
+    displayName: "Microsoft Azure",
+    supportedCapabilities: {
+      compute: true,
+      storage: true,
+      queue: true,
+      database: { name: "database", supportedEngines: ["cosmosdb", "postgres", "mysql"] },
+      cache: { name: "cache", supportedEngines: ["redis"] },
+      events: true,
+      secrets: true,
+      websocket: true,
+      cron: true,
+    },
+    alternatives: {},
+  },
   cloudflare: {
     providerName: "cloudflare",
     displayName: "Cloudflare Workers & R2",
