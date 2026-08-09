@@ -2,7 +2,8 @@
  * AWS Lambda Service — Real Lambda Operations
  *
  * Creates, updates, invokes, and deletes Lambda functions using AWS SDK v3.
- * Handles ZIP packaging, IAM role assignment, and configuration updates.
+ * Handles ZIP packaging, IAM role assignment, configuration updates,
+ * ownership tagging, and exponential backoff retry handling.
  */
 
 import {
@@ -15,13 +16,12 @@ import {
   InvokeCommand,
   waitUntilFunctionActiveV2,
   waitUntilFunctionUpdatedV2,
-  type FunctionConfiguration,
 } from "@aws-sdk/client-lambda";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { createReadStream } from "node:fs";
 import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
+import { awsRetry } from "../utils/retry.js";
 
 export interface LambdaDeployConfig {
   functionName: string;
@@ -35,6 +35,7 @@ export interface LambdaDeployConfig {
   codePath: string;
   description?: string;
   appName: string;
+  envName?: string;
 }
 
 export interface LambdaState {
@@ -62,24 +63,29 @@ export class LambdaService {
   async createFunction(config: LambdaDeployConfig): Promise<string> {
     const zipBuffer = await this.createZipBuffer(config.codePath);
 
-    const result = await this.client.send(
-      new CreateFunctionCommand({
-        FunctionName: config.functionName,
-        Role: config.roleArn,
-        Handler: config.handler,
-        Runtime: config.runtime as any,
-        MemorySize: config.memorySize,
-        Timeout: config.timeout,
-        Code: { ZipFile: zipBuffer },
-        Environment: {
-          Variables: config.environment,
-        },
-        Description: config.description || `NovaServe function: ${config.functionName}`,
-        Tags: {
-          "novaserve:app": config.appName,
-          "novaserve:managed": "true",
-        },
-      })
+    const result = await awsRetry(() =>
+      this.client.send(
+        new CreateFunctionCommand({
+          FunctionName: config.functionName,
+          Role: config.roleArn,
+          Handler: config.handler,
+          Runtime: config.runtime as any,
+          MemorySize: config.memorySize,
+          Timeout: config.timeout,
+          Code: { ZipFile: zipBuffer },
+          Environment: {
+            Variables: config.environment,
+          },
+          Description: config.description || `NovaServe function: ${config.functionName}`,
+          Tags: {
+            "novaserve:managed": "true",
+            "novaserve:application": config.appName,
+            "novaserve:environment": config.envName || "production",
+            "novaserve:resource": config.functionName,
+            "novaserve:version": "1.0.0",
+          },
+        })
+      )
     );
 
     // Wait for function to become active
@@ -95,11 +101,13 @@ export class LambdaService {
   async updateFunctionCode(functionName: string, codePath: string): Promise<string> {
     const zipBuffer = await this.createZipBuffer(codePath);
 
-    const result = await this.client.send(
-      new UpdateFunctionCodeCommand({
-        FunctionName: functionName,
-        ZipFile: zipBuffer,
-      })
+    const result = await awsRetry(() =>
+      this.client.send(
+        new UpdateFunctionCodeCommand({
+          FunctionName: functionName,
+          ZipFile: zipBuffer,
+        })
+      )
     );
 
     await waitUntilFunctionUpdatedV2(
@@ -115,14 +123,16 @@ export class LambdaService {
     functionName: string,
     config: Partial<Pick<LambdaDeployConfig, "memorySize" | "timeout" | "environment" | "description">>
   ): Promise<void> {
-    await this.client.send(
-      new UpdateFunctionConfigurationCommand({
-        FunctionName: functionName,
-        MemorySize: config.memorySize,
-        Timeout: config.timeout,
-        Environment: config.environment ? { Variables: config.environment } : undefined,
-        Description: config.description,
-      })
+    await awsRetry(() =>
+      this.client.send(
+        new UpdateFunctionConfigurationCommand({
+          FunctionName: functionName,
+          MemorySize: config.memorySize,
+          Timeout: config.timeout,
+          Environment: config.environment ? { Variables: config.environment } : undefined,
+          Description: config.description,
+        })
+      )
     );
 
     await waitUntilFunctionUpdatedV2(
@@ -134,8 +144,8 @@ export class LambdaService {
   /** Delete a Lambda function */
   async deleteFunction(functionName: string): Promise<void> {
     try {
-      await this.client.send(
-        new DeleteFunctionCommand({ FunctionName: functionName })
+      await awsRetry(() =>
+        this.client.send(new DeleteFunctionCommand({ FunctionName: functionName }))
       );
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "ResourceNotFoundException") {
@@ -148,8 +158,8 @@ export class LambdaService {
   /** Get live Lambda function configuration for drift detection */
   async getFunction(functionName: string): Promise<LambdaState | null> {
     try {
-      const result = await this.client.send(
-        new GetFunctionCommand({ FunctionName: functionName })
+      const result = await awsRetry(() =>
+        this.client.send(new GetFunctionCommand({ FunctionName: functionName }))
       );
       const cfg = result.Configuration!;
       return {
@@ -172,19 +182,24 @@ export class LambdaService {
   }
 
   /** Invoke a Lambda function synchronously */
-  async invokeFunction(functionName: string, payload: unknown): Promise<{
+  async invokeFunction(
+    functionName: string,
+    payload: unknown
+  ): Promise<{
     statusCode: number;
     body: unknown;
     durationMs: number;
     logResult?: string;
   }> {
     const start = Date.now();
-    const result = await this.client.send(
-      new InvokeCommand({
-        FunctionName: functionName,
-        Payload: Buffer.from(JSON.stringify(payload)),
-        LogType: "Tail",
-      })
+    const result = await awsRetry(() =>
+      this.client.send(
+        new InvokeCommand({
+          FunctionName: functionName,
+          Payload: Buffer.from(JSON.stringify(payload)),
+          LogType: "Tail",
+        })
+      )
     );
 
     const body = result.Payload
@@ -203,15 +218,12 @@ export class LambdaService {
 
   /** Create a ZIP buffer from a code directory */
   private async createZipBuffer(codePath: string): Promise<Buffer> {
-    // If codePath points to a file, read it directly
     if (codePath.endsWith(".zip")) {
       return readFile(codePath);
     }
 
-    // If it's a directory with bundled JS, create a zip
     const indexPath = join(codePath, "index.js");
     if (existsSync(indexPath)) {
-      // Use the system zip command to create a proper ZIP file
       const zipPath = join(codePath, "lambda.zip");
       execSync(`cd "${codePath}" && zip -r lambda.zip . -x "*.map"`, { stdio: "pipe" });
       const zipBuffer = await readFile(zipPath);

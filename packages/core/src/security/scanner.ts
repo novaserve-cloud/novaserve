@@ -73,19 +73,37 @@ export class NovaSecurityScanner {
         }
       }
 
-      // 3. Audit APIs for Wildcard CORS
-      if (res.type === "api") {
-        const cors = res.config.cors as { origin?: string; allowOrigins?: string[] } | undefined;
-        if (cors && (cors.origin === "*" || (Array.isArray(cors.allowOrigins) && cors.allowOrigins.includes("*")))) {
-          findings.push({
-            id: `SEC-API-001-${id}`,
-            severity: "MEDIUM",
-            title: "Overly Permissive CORS Origin (*)",
-            resourceId: id,
-            description: `API "${res.name}" allows requests from any origin ("*").`,
-            remediation: "Restrict CORS origins to explicit domains (e.g. https://app.example.com).",
-          });
+      // 4. Audit environment variables for hardcoded secrets
+      if (res.type === "function") {
+        const env = (res.config.environment as Record<string, string>) || {};
+        for (const [key, val] of Object.entries(env)) {
+          if (
+            /secret|password|key|token|auth/i.test(key) &&
+            !val.startsWith("secret:") &&
+            !val.startsWith("process.env")
+          ) {
+            findings.push({
+              id: `SEC-ENV-001-${id}-${key}`,
+              severity: "HIGH",
+              title: "Potential Hardcoded Secret in Environment Variable",
+              resourceId: id,
+              description: `Function "${res.name}" has hardcoded secret variable "${key}".`,
+              remediation: "Use NovaServe secret() vault or AWS Secrets Manager reference instead of plain-text string.",
+            });
+          }
         }
+      }
+
+      // 5. Audit Storage Buckets for Encryption
+      if (res.type === "storage" && res.config.encryption === false) {
+        findings.push({
+          id: `SEC-STR-002-${id}`,
+          severity: "HIGH",
+          title: "Unencrypted Storage Bucket Configured",
+          resourceId: id,
+          description: `Storage bucket "${res.name}" has server-side encryption disabled.`,
+          remediation: "Enable SSE-S3 AES256 or KMS encryption for all stored objects.",
+        });
       }
     }
 

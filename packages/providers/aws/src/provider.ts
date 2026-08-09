@@ -391,6 +391,8 @@ export class AWSProvider implements NovaProvider {
             timeout,
             environment: (resource.config.environment as Record<string, string>) || {},
           });
+          const permissions = (resource.config.permissions as any[]) || [];
+          await this.iam.updateExecutionRolePolicy(roleName, permissions, appName);
         }
         break;
       }
@@ -414,6 +416,10 @@ export class AWSProvider implements NovaProvider {
           );
           arn = result.queueArn;
           resourceOutputs[`queue_${resource.name}_url`] = result.queueUrl;
+        } else if (action.action === "update") {
+          await this.sqs.updateQueueAttributes(resourceName, {
+            visibilityTimeout: (resource.config.visibilityTimeout as number) || 30,
+          });
         }
         break;
       }
@@ -447,7 +453,7 @@ export class AWSProvider implements NovaProvider {
   }
 
   /**
-   * Execute API Gateway creation with Lambda integrations.
+   * Execute API Gateway creation or in-place route update with Lambda integrations.
    */
   private async executeApiAction(
     action: DeploymentPlanAction,
@@ -458,12 +464,8 @@ export class AWSProvider implements NovaProvider {
     const apiName = `${appName}-api`;
     const routes = (resource.config.routes as Record<string, string>) || {};
 
-    // Resolve handler references to function ARNs
-    // Routes map like "GET /hello" -> "src/handlers/hello.handler"
-    // We need to find the Lambda ARN for each handler's function name
     const resolvedArns: Record<string, string> = {};
     for (const [routeKey, handlerRef] of Object.entries(routes)) {
-      // Try to match handler to a deployed function
       for (const [fnName, fnArn] of Object.entries(functionArns)) {
         if (handlerRef.includes(fnName) || fnName === handlerRef) {
           resolvedArns[routeKey] = fnArn;
@@ -494,6 +496,30 @@ export class AWSProvider implements NovaProvider {
           url: result.apiEndpoint,
         },
       };
+    } else if (action.action === "update") {
+      const existingApi = await this.apiGateway.findApi(apiName);
+      if (existingApi?.ApiId) {
+        await this.apiGateway.updateHttpApi(
+          existingApi.ApiId,
+          routes,
+          resolvedArns,
+          appName
+        );
+        return {
+          type: resource.type,
+          name: resource.name,
+          config: resource.config,
+          dependencies: resource.dependencies,
+          id: `arn:aws:apigateway:${this.region}::/apis/${existingApi.ApiId}`,
+          configHash: createHash("sha256").update(JSON.stringify(resource.config)).digest("hex"),
+          status: "deployed",
+          outputs: {
+            apiId: existingApi.ApiId,
+            apiEndpoint: existingApi.ApiEndpoint || "",
+            url: existingApi.ApiEndpoint || "",
+          },
+        };
+      }
     }
 
     return {

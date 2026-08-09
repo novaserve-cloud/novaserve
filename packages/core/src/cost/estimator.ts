@@ -2,16 +2,22 @@
  * Nova Cost Intelligence Engine
  *
  * Estimates monthly cloud infrastructure expenditure per resource and provider
+ * using differentiated pricing classifications (EXACT, ESTIMATED, USAGE_BASED, UNKNOWN)
  * and identifies cost optimization opportunities.
  */
 
 import type { NovaIRGraph } from "../ir/schema.js";
+
+export type PricingModel = "EXACT" | "ESTIMATED" | "USAGE_BASED" | "UNKNOWN";
+export type PricingConfidence = "HIGH" | "MEDIUM" | "LOW";
 
 export interface ResourceCostItem {
   resourceId: string;
   resourceName: string;
   type: string;
   estimatedMonthlyUsd: number;
+  pricingModel: PricingModel;
+  confidence: PricingConfidence;
   breakdown: string;
   optimizationAdvice?: string;
 }
@@ -40,13 +46,16 @@ export class NovaCostEstimator {
       let cost = 0;
       let breakdown = "";
       let advice: string | undefined;
+      let pricingModel: PricingModel = "USAGE_BASED";
+      let confidence: PricingConfidence = "MEDIUM";
 
       switch (res.type) {
         case "function": {
           const memory = (res.config.memory as number) || 512;
-          const monthlyInvocations = 1000000; // default 1M estimate
           cost = Number(((memory / 1024) * 2.4 * 1.5).toFixed(2));
           breakdown = `${memory}MB memory @ 1M invocations/mo`;
+          pricingModel = "USAGE_BASED";
+          confidence = "MEDIUM";
 
           if (memory > 512) {
             const recommendedCost = Number(((256 / 1024) * 2.4 * 1.5).toFixed(2));
@@ -65,27 +74,37 @@ export class NovaCostEstimator {
         case "storage": {
           cost = 1.25;
           breakdown = "50GB S3 Standard storage + 10k PUT/GET requests";
+          pricingModel = "USAGE_BASED";
+          confidence = "MEDIUM";
           break;
         }
         case "queue": {
           cost = 0.4;
           breakdown = "SQS standard queue requests (< 1M reqs)";
+          pricingModel = "USAGE_BASED";
+          confidence = "HIGH";
           break;
         }
         case "database": {
           const engine = (res.config.engine as string) || "postgres";
           cost = engine === "dynamodb" ? 3.5 : 15.0;
           breakdown = `${engine} managed instance / storage`;
+          pricingModel = engine === "dynamodb" ? "USAGE_BASED" : "ESTIMATED";
+          confidence = "MEDIUM";
           break;
         }
         case "api": {
           cost = 2.0;
           breakdown = "API Gateway HTTP API requests (< 1M reqs)";
+          pricingModel = "USAGE_BASED";
+          confidence = "HIGH";
           break;
         }
         default: {
           cost = 0.5;
           breakdown = "Base resource allocation";
+          pricingModel = "UNKNOWN";
+          confidence = "LOW";
           break;
         }
       }
@@ -96,6 +115,8 @@ export class NovaCostEstimator {
         resourceName: res.name,
         type: res.type,
         estimatedMonthlyUsd: cost,
+        pricingModel,
+        confidence,
         breakdown,
         optimizationAdvice: advice,
       });
