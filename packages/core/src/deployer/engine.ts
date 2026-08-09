@@ -235,8 +235,15 @@ export class DeploymentEngine {
 
       journal.saveToDisk(this.projectRoot);
 
-      // 10. Save state
+      // 10. Save state & Post-condition Verification
       if (result.success) {
+        // Post-condition: Confirm all deployed resources exist in active status
+        for (const res of result.resources) {
+          if (!res.id || res.status === "failed") {
+            console.warn(`[NovaPostCondition] Resource ${res.name} (${res.type}) failed post-deploy validation.`);
+          }
+        }
+
         this.stateManager.saveDeployment(
           app.name,
           environment,

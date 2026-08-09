@@ -32,7 +32,7 @@ export interface ValidationResult {
 /** Single action in a deployment plan */
 export interface DeploymentPlanAction {
   /** Action type */
-  action: "create" | "update" | "delete" | "skip";
+  action: "create" | "update" | "replace" | "delete" | "skip";
   /** Target resource */
   resource: Resource;
   /** Reason for the action */

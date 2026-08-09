@@ -45,6 +45,9 @@ export type {
   ValidationResult,
 } from "./types/provider.js";
 
+export { RESOURCE_CAPABILITY_MATRIX } from "./types/lifecycle.js";
+export type { ResourceExecutor, ResourceCapability } from "./types/lifecycle.js";
+
 // Nova IR & Compiler
 export { NovaCompiler } from "./compiler/compiler.js";
 export { validateCapabilities, KNOWN_PROVIDER_CAPABILITIES } from "./compiler/capabilities.js";

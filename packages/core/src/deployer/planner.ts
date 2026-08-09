@@ -7,6 +7,7 @@
 
 import { createHash } from "node:crypto";
 import type { NovaIRGraph, NovaIRResource } from "../ir/schema.js";
+import { RESOURCE_CAPABILITY_MATRIX } from "../types/lifecycle.js";
 
 export interface ResourceDiffItem {
   attribute: string;
@@ -15,7 +16,7 @@ export interface ResourceDiffItem {
 }
 
 export interface NovaPlanAction {
-  action: "create" | "update" | "delete" | "skip";
+  action: "create" | "update" | "replace" | "delete" | "skip";
   resourceId: string;
   resourceType: string;
   name: string;
@@ -38,6 +39,7 @@ export interface NovaPlanResult {
   summary: {
     create: number;
     update: number;
+    replace: number;
     delete: number;
     skip: number;
   };
@@ -90,7 +92,7 @@ export class NovaPlanner {
     provider = "aws"
   ): NovaPlanResult {
     const actions: NovaPlanAction[] = [];
-    const summary = { create: 0, update: 0, delete: 0, skip: 0 };
+    const summary = { create: 0, update: 0, replace: 0, delete: 0, skip: 0 };
     let totalEstimatedSeconds = 0;
     let totalEstimatedMonthlyCostUsd = 0;
 
@@ -119,7 +121,6 @@ export class NovaPlanner {
         summary.create++;
         totalEstimatedSeconds += sec;
       } else if (existing.configHash !== res.configHash) {
-        // Resource update (~)
         const sec = Math.max(2, Math.floor(estimateResourceDeployTime(res.type) * 0.6));
         const diffs: ResourceDiffItem[] = [];
 
@@ -135,19 +136,41 @@ export class NovaPlanner {
           }
         }
 
-        actions.push({
-          action: "update",
-          resourceId: id,
-          resourceType: res.type,
-          name: res.name,
-          reason: `Config hash modified (${existing.configHash.slice(0, 7)} → ${res.configHash.slice(0, 7)})`,
-          estimatedSeconds: sec,
-          estimatedMonthlyCostUsd: monthlyCost,
-          diffs,
-          dependsOn: res.dependencies,
-        });
-        summary.update++;
-        totalEstimatedSeconds += sec;
+        // Check if any diff attribute is immutable
+        const capability = RESOURCE_CAPABILITY_MATRIX[res.type];
+        const immutableAttr = diffs.find((d) => capability?.immutableAttributes?.includes(d.attribute));
+
+        if (immutableAttr) {
+          // Resource replacement (!=)
+          actions.push({
+            action: "replace",
+            resourceId: id,
+            resourceType: res.type,
+            name: res.name,
+            reason: `Immutable attribute "${immutableAttr.attribute}" changed (${JSON.stringify(immutableAttr.oldValue)} → ${JSON.stringify(immutableAttr.newValue)}). Resource replacement required.`,
+            estimatedSeconds: sec * 2,
+            estimatedMonthlyCostUsd: monthlyCost,
+            diffs,
+            dependsOn: res.dependencies,
+          });
+          summary.replace++;
+          totalEstimatedSeconds += sec * 2;
+        } else {
+          // Resource update (~)
+          actions.push({
+            action: "update",
+            resourceId: id,
+            resourceType: res.type,
+            name: res.name,
+            reason: `Config hash modified (${existing.configHash.slice(0, 7)} → ${res.configHash.slice(0, 7)})`,
+            estimatedSeconds: sec,
+            estimatedMonthlyCostUsd: monthlyCost,
+            diffs,
+            dependsOn: res.dependencies,
+          });
+          summary.update++;
+          totalEstimatedSeconds += sec;
+        }
       } else {
         // Unchanged / skip
         actions.push({

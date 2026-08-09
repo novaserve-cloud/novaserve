@@ -39,14 +39,6 @@ export function deployCommand(): Command {
         return;
       }
 
-      logger.box([
-        { key: "App:", value: app.name },
-        { key: "Environment:", value: environment },
-        { key: "Provider:", value: provider.toUpperCase() },
-        { key: "Region:", value: app.config.region || "us-east-1" },
-        { key: "Runtime:", value: app.config.runtime || "node20" },
-      ]);
-
       // Load the appropriate provider
       let cloudProvider;
       try {
@@ -77,6 +69,18 @@ export function deployCommand(): Command {
         logger.error(`Failed to load provider "${provider}": ${error instanceof Error ? error.message : String(error)}`);
         process.exit(1);
       }
+
+      // Fetch caller identity status for account safety verification
+      const status = await cloudProvider.getStatus();
+
+      logger.box([
+        { key: "App:", value: app.name },
+        { key: "Environment:", value: environment },
+        { key: "Provider:", value: provider.toUpperCase() },
+        { key: "Account:", value: status.account || "N/A" },
+        { key: "Region:", value: status.region || app.config.region || "us-east-1" },
+        { key: "Runtime:", value: app.config.runtime || "node20" },
+      ]);
 
       const engine = new DeploymentEngine(cloudProvider, process.cwd());
 

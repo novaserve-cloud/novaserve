@@ -63,6 +63,8 @@ export function planCommand(): Command {
             console.log(chalk.green(`  + ${action.resourceType.toUpperCase()} ${action.name}`));
           } else if (action.action === "update") {
             console.log(chalk.yellow(`  ~ ${action.resourceType.toUpperCase()} ${action.name}`));
+          } else if (action.action === "replace") {
+            console.log(chalk.cyan(`  != ${action.resourceType.toUpperCase()} ${action.name} (replace: ${action.reason})`));
           } else if (action.action === "delete") {
             console.log(chalk.red(`  - ${action.resourceType.toUpperCase()} ${action.name}`));
           } else {

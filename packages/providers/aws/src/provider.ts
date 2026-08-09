@@ -393,12 +393,28 @@ export class AWSProvider implements NovaProvider {
           });
           const permissions = (resource.config.permissions as any[]) || [];
           await this.iam.updateExecutionRolePolicy(roleName, permissions, appName);
+        } else if (action.action === "replace") {
+          await this.lambda.deleteFunction(resourceName);
+          arn = await this.lambda.createFunction({
+            functionName: resourceName,
+            roleArn,
+            handler,
+            runtime,
+            memorySize: memory,
+            timeout,
+            environment: (resource.config.environment as Record<string, string>) || {},
+            codePath,
+            appName,
+          });
         }
         break;
       }
 
       case "storage": {
         if (action.action === "create") {
+          arn = await this.s3.createBucket(resourceName, appName);
+        } else if (action.action === "replace") {
+          await this.s3.deleteBucket(resourceName, true);
           arn = await this.s3.createBucket(resourceName, appName);
         }
         resourceOutputs[`bucket_${resource.name}`] = `s3://${resourceName}`;
@@ -420,12 +436,34 @@ export class AWSProvider implements NovaProvider {
           await this.sqs.updateQueueAttributes(resourceName, {
             visibilityTimeout: (resource.config.visibilityTimeout as number) || 30,
           });
+        } else if (action.action === "replace") {
+          await this.sqs.deleteQueue(resourceName);
+          const result = await this.sqs.createQueue(
+            resourceName,
+            {
+              visibilityTimeout: (resource.config.visibilityTimeout as number) || 30,
+            },
+            appName
+          );
+          arn = result.queueArn;
+          resourceOutputs[`queue_${resource.name}_url`] = result.queueUrl;
         }
         break;
       }
 
       case "database": {
         if (action.action === "create") {
+          arn = await this.dynamodb.createTable(
+            resourceName,
+            {
+              partitionKey: (resource.config.partitionKey as string) || "id",
+              sortKey: resource.config.sortKey as string | undefined,
+              billingMode: "PAY_PER_REQUEST",
+            },
+            appName
+          );
+        } else if (action.action === "replace") {
+          await this.dynamodb.deleteTable(resourceName);
           arn = await this.dynamodb.createTable(
             resourceName,
             {
