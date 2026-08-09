@@ -1,1 +1,9 @@
 export { CloudflareProvider } from "./provider.js";
+export { CloudflareAuthManager } from "./utils/auth.js";
+export { cloudflareRetry } from "./utils/retry.js";
+export { CloudflareWorkersService } from "./services/workers.js";
+export { CloudflareStorageService } from "./services/storage.js";
+export { CloudflareQueueService } from "./services/queues.js";
+export { CloudflareSecretsService } from "./services/secrets.js";
+export { CloudflareLogsService } from "./services/logs.js";
+export { CloudflareLiveStateInspector } from "./inspector.js";
