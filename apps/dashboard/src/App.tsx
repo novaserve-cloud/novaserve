@@ -1345,15 +1345,45 @@ function DeploymentRow({
 
 function ResourcesSection({ searchQuery }: { searchQuery: string }) {
   const [typeFilter, setTypeFilter] = useState('all');
+  const [defineModalOpen, setDefineModalOpen] = useState(false);
+  const [newResName, setNewResName] = useState('');
+  const [newResType, setNewResType] = useState('Function');
+  const [newResConfig, setNewResConfig] = useState('memory: 512MB');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const resources = [
+  const [resources, setResources] = useState([
     { name: 'api-gateway', type: 'REST API', runtime: 'AWS API Gateway', status: 'Healthy', details: '2 routes mounted' },
     { name: 'src/handlers/users.list', type: 'Function', runtime: 'Node20.x', status: 'Active', details: '256 MB · 24ms' },
     { name: 'src/handlers/users.create', type: 'Function', runtime: 'Node20.x', status: 'Active', details: '256 MB · 48ms' },
     { name: 'src/handlers/email.process', type: 'Queue Consumer', runtime: 'Node20.x', status: 'Active', details: '512 MB · 110ms' },
     { name: 'uploads-bucket', type: 'Storage Bucket', runtime: 'AWS S3', status: 'Ready', details: '10 MB max' },
     { name: 'postgres-db', type: 'Database', runtime: 'PostgreSQL 16', status: 'Healthy', details: '1.2 GB stored' },
-  ];
+  ]);
+
+  const handleAddResource = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newResName.trim()) return;
+
+    let runtime = 'Node20.x';
+    if (newResType === 'Storage Bucket') runtime = 'AWS S3 / Azure Blob / R2';
+    else if (newResType === 'Database') runtime = 'PostgreSQL 16 / DynamoDB';
+    else if (newResType === 'REST API') runtime = 'API Gateway v2';
+    else if (newResType === 'Queue Consumer') runtime = 'SQS / Service Bus';
+
+    const newResource = {
+      name: newResName.trim(),
+      type: newResType,
+      runtime,
+      status: 'Ready',
+      details: newResConfig || 'Configured in nova.config.ts',
+    };
+
+    setResources([newResource, ...resources]);
+    setDefineModalOpen(false);
+    setNewResName('');
+    setToastMessage(`Defined resource "${newResource.name}" successfully!`);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   const filtered = resources.filter(
     (r) =>
@@ -1363,6 +1393,106 @@ function ResourcesSection({ searchQuery }: { searchQuery: string }) {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4">
+      {toastMessage && (
+        <div className="bg-emerald-50 text-emerald-800 border border-emerald-300 px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-between shadow-xs transition-all">
+          <span>✓ {toastMessage}</span>
+          <button onClick={() => setToastMessage(null)} className="text-emerald-600 hover:text-emerald-950 font-bold ml-4">✕</button>
+        </div>
+      )}
+
+      {/* Define Resource Modal */}
+      {defineModalOpen && (
+        <div className="fixed inset-0 bg-gray-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-2xl max-w-lg w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-amber-100 rounded-lg text-amber-900">
+                  <Plus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-gray-950">Define New Resource</h3>
+                  <p className="text-xs text-gray-500">Mount a new serverless function, database, or queue to Nova IR graph</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setDefineModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleAddResource} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Resource Identifier / Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. src/handlers/analytics.process or users-table"
+                  value={newResName}
+                  onChange={(e) => setNewResName(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg text-xs border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Resource Type
+                  </label>
+                  <select
+                    value={newResType}
+                    onChange={(e) => setNewResType(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg text-xs border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+                  >
+                    <option value="Function">Function</option>
+                    <option value="REST API">REST API</option>
+                    <option value="Storage Bucket">Storage Bucket</option>
+                    <option value="Queue Consumer">Queue Consumer</option>
+                    <option value="Database">Database</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Configuration Spec
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. memory: 512MB · 30s timeout"
+                    value={newResConfig}
+                    onChange={(e) => setNewResConfig(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg text-xs border border-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-amber-50/60 border border-amber-200 rounded-lg p-3 text-[11px] text-amber-900 leading-relaxed">
+                💡 Resources defined in the dashboard automatically generate deterministic Nova IR definitions and sync across local, staging, and production environments.
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setDefineModalOpen(false)}
+                  className="btn-secondary text-xs py-1.5 px-4"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary-yellow text-xs py-1.5 px-4 font-bold"
+                >
+                  Define & Mount Resource
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between bg-white p-4 rounded-xl border border-gray-200 shadow-xs">
         <div className="flex items-center gap-2">
           {['all', 'function', 'api', 'storage', 'database'].map((f) => (
@@ -1378,7 +1508,10 @@ function ResourcesSection({ searchQuery }: { searchQuery: string }) {
             </button>
           ))}
         </div>
-        <button className="btn-primary-yellow text-xs">
+        <button
+          onClick={() => setDefineModalOpen(true)}
+          className="btn-primary-yellow text-xs"
+        >
           <Plus className="w-3.5 h-3.5 text-gray-950" />
           <span>Define Resource</span>
         </button>
