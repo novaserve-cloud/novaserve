@@ -143,12 +143,6 @@ export interface NovaProvider {
 
   // ── Deployment ─────────────────────────────────────────
 
-  /** Generate a deployment plan (preview changes) */
-  plan(
-    resources: Resource[],
-    currentState: ResolvedResource[]
-  ): Promise<DeploymentPlan>;
-
   /** Execute a deployment plan */
   deploy(plan: DeploymentPlan): Promise<DeployResult>;
 

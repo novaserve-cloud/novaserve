@@ -56,6 +56,8 @@ export type {
   NovaIRResourceType,
   NovaIRPermission,
   NovaIROutput,
+  NovaIRBuildMetadata,
+  NovaIRAppHeader,
 } from "./ir/schema.js";
 
 // Planner & Diff

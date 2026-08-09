@@ -17,6 +17,7 @@ export function destroyCommand(): Command {
       const app = await loadConfig();
 
       logger.warn(`This will destroy all resources for "${app.name}" in "${options.env}"`);
+      logger.warn(`DATA LOSS WARNING: This action is irreversible. All S3 bucket contents and DynamoDB table data will be permanently deleted.`);
       logger.blank();
 
       if (!options.force) {
@@ -28,9 +29,34 @@ export function destroyCommand(): Command {
       }
 
       try {
-        const { LocalProvider } = await import("novaserve-provider-local");
-        const provider = new LocalProvider({});
-        const engine = new DeploymentEngine(provider, process.cwd());
+        const providerName = app.config.provider || "aws";
+        let cloudProvider;
+
+        if (providerName === "local") {
+          const { LocalProvider } = await import("novaserve-provider-local");
+          cloudProvider = new LocalProvider({});
+        } else if (providerName === "aws") {
+          const { AWSProvider } = await import("novaserve-provider-aws");
+          cloudProvider = new AWSProvider();
+        } else if (providerName === "azure") {
+          const { AzureProvider } = await import("novaserve-provider-azure");
+          cloudProvider = new AzureProvider();
+        } else if (providerName === "gcp") {
+          const { GCPProvider } = await import("novaserve-provider-gcp");
+          cloudProvider = new GCPProvider();
+        } else if (providerName === "cloudflare") {
+          const { CloudflareProvider } = await import("novaserve-provider-cloudflare");
+          cloudProvider = new CloudflareProvider();
+        } else if (providerName === "docker") {
+          const { DockerProvider } = await import("novaserve-provider-docker");
+          cloudProvider = new DockerProvider();
+        } else {
+          logger.warn(`Provider "${providerName}" is unknown. Falling back to local for demo.`);
+          const { LocalProvider } = await import("novaserve-provider-local");
+          cloudProvider = new LocalProvider({});
+        }
+
+        const engine = new DeploymentEngine(cloudProvider, process.cwd());
 
         await withSpinner("Destroying resources...", () =>
           engine.destroy(app, options.env)

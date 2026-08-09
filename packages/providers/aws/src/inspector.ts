@@ -2,8 +2,15 @@
  * AWS Live State Inspector
  *
  * Inspects actual deployed live infrastructure resources across AWS Lambda,
- * S3, SQS, API Gateway v2, and IAM policies using AWS credentials/APIs.
+ * S3, SQS, DynamoDB, API Gateway v2 using AWS SDK v3.
  */
+
+import { STSClient, GetCallerIdentityCommand } from "@aws-sdk/client-sts";
+import { LambdaService } from "./services/lambda.js";
+import { S3Service } from "./services/s3.js";
+import { SQSService } from "./services/sqs.js";
+import { DynamoDBService } from "./services/dynamodb.js";
+import { ApiGatewayService } from "./services/apigateway.js";
 
 export interface ObservedResourceState {
   resourceId: string;
@@ -17,9 +24,11 @@ export interface ObservedResourceState {
 
 export class AWSLiveStateInspector {
   private region: string;
+  private appName: string;
 
-  constructor(region = "us-east-1") {
+  constructor(region: string = "us-east-1", appName: string = "unknown") {
     this.region = region;
+    this.appName = appName;
   }
 
   /** Inspect live AWS state for a set of Nova IR resource IDs */
@@ -27,45 +36,88 @@ export class AWSLiveStateInspector {
     resources: Array<{ id: string; type: string; name: string; config: Record<string, unknown> }>
   ): Promise<Record<string, ObservedResourceState>> {
     const observed: Record<string, ObservedResourceState> = {};
-    const hasAwsCredentials = !!(process.env.AWS_ACCESS_KEY_ID || process.env.AWS_PROFILE || process.env.AWS_CONTAINER_CREDENTIALS_RELATIVE_URI);
+    let accountId = "";
 
-    for (const res of resources) {
-      const liveConfig: Record<string, unknown> = { ...res.config };
-
-      if (!hasAwsCredentials) {
-        // Without AWS environment credentials, state is marked based on local configuration state
+    try {
+      const sts = new STSClient({ region: this.region });
+      const identity = await sts.send(new GetCallerIdentityCommand({}));
+      accountId = identity.Account || "";
+    } catch {
+      // If we don't have AWS credentials, return "missing" for all
+      for (const res of resources) {
         observed[res.id] = {
           resourceId: res.id,
           type: res.type,
           name: res.name,
-          arn: `arn:aws:${res.type}:${this.region}:123456789012:${res.name}`,
-          status: "deployed",
-          liveConfig,
+          status: "missing",
+          liveConfig: {},
           lastObservedIso: new Date().toISOString(),
         };
-        continue;
       }
+      return observed;
+    }
 
-      // If credentials exist, inspect specific AWS service endpoint mocks or SDK queries
+    const lambda = new LambdaService(this.region);
+    const s3 = new S3Service(this.region);
+    const sqs = new SQSService(this.region);
+    const dynamodb = new DynamoDBService(this.region);
+    const apiGateway = new ApiGatewayService(this.region, accountId);
+
+    for (const res of resources) {
+      const resourceName = `${this.appName}-${res.name}`;
+      const liveConfig: Record<string, unknown> = {};
+      let arn = "";
+      let isMissing = false;
+
       try {
         switch (res.type) {
           case "function": {
-            // Simulated live Lambda GetFunction response
-            liveConfig.memory = res.config.memory || 512;
-            liveConfig.timeout = res.config.timeout || 30;
+            const state = await lambda.getFunction(resourceName);
+            if (!state) {
+              isMissing = true;
+            } else {
+              arn = state.functionArn;
+              liveConfig.memory = state.memorySize;
+              liveConfig.timeout = state.timeout;
+              liveConfig.runtime = state.runtime;
+            }
             break;
           }
           case "storage": {
-            liveConfig.public = res.config.public ?? false;
-            liveConfig.encryption = "AES256";
+            const exists = await s3.bucketExists(resourceName);
+            if (!exists) {
+              isMissing = true;
+            } else {
+              arn = `arn:aws:s3:::${resourceName}`;
+            }
             break;
           }
           case "queue": {
-            liveConfig.visibilityTimeout = res.config.visibilityTimeout || 60;
+            const url = await sqs.getQueueUrl(resourceName);
+            if (!url) {
+              isMissing = true;
+            } else {
+              arn = `arn:aws:sqs:${this.region}:${accountId}:${resourceName}`;
+            }
+            break;
+          }
+          case "database": {
+            const state = await dynamodb.describeTable(resourceName);
+            if (!state) {
+              isMissing = true;
+            } else {
+              arn = state.tableArn;
+            }
             break;
           }
           case "api": {
-            liveConfig.cors = res.config.cors || true;
+            const apiName = `${this.appName}-api`;
+            const state = await apiGateway.findApi(apiName);
+            if (!state) {
+              isMissing = true;
+            } else {
+              arn = `arn:aws:apigateway:${this.region}::/apis/${state.ApiId}`;
+            }
             break;
           }
         }
@@ -74,12 +126,12 @@ export class AWSLiveStateInspector {
           resourceId: res.id,
           type: res.type,
           name: res.name,
-          arn: `arn:aws:${res.type}:${this.region}:123456789012:${res.name}`,
-          status: "deployed",
+          arn,
+          status: isMissing ? "missing" : "deployed",
           liveConfig,
           lastObservedIso: new Date().toISOString(),
         };
-      } catch {
+      } catch (e) {
         observed[res.id] = {
           resourceId: res.id,
           type: res.type,

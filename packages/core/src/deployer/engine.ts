@@ -15,6 +15,8 @@ import { DependencyGraph } from "../graph/dependency.js";
 import { Bundler } from "../builder/bundler.js";
 import { StateManager } from "./state.js";
 import { InfrastructureDiff } from "./diff.js";
+import { NovaCompiler } from "../compiler/compiler.js";
+import { NovaPlanner } from "./planner.js";
 
 export interface DeployOptions {
   /** Target environment (default: "production") */
@@ -113,9 +115,45 @@ export class DeploymentEngine {
       // 7. Get current state for diffing
       const currentState = this.stateManager.getResources(app.name, environment);
 
-      // 8. Generate deployment plan
+      // 8. Generate deployment plan using canonical NovaPlanner
       await this.eventBus.emit("deploy:plan", { environment });
-      const plan = await this.provider.plan(resources, currentState);
+
+      const compileResult = NovaCompiler.compile({
+        appName: app.name,
+        environment,
+        targetProvider: this.provider.name,
+        resources,
+      });
+
+      const activeState: Record<string, { configHash: string; config: Record<string, unknown> }> = {};
+      for (const res of currentState) {
+        activeState[`${res.type}-${res.name}`] = { configHash: res.configHash, config: res.config };
+      }
+
+      const novaPlan = NovaPlanner.plan(compileResult.ir, activeState, this.provider.name);
+
+      // Map NovaPlanResult to DeploymentPlan format
+      const plan: DeploymentPlan = {
+        appName: novaPlan.appName,
+        provider: novaPlan.provider,
+        environment: novaPlan.environment,
+        actions: novaPlan.actions.map(a => {
+          let resource = resources.find(r => r.name === a.name && r.type === a.resourceType);
+          if (!resource) {
+             // For deletions
+             const stateRes = currentState.find(r => r.name === a.name && r.type === a.resourceType);
+             resource = stateRes ? { type: stateRes.type, name: stateRes.name, config: stateRes.config, dependencies: stateRes.dependencies } as Resource : { type: a.resourceType as any, name: a.name, config: {}, dependencies: [] };
+          }
+          return {
+            action: a.action,
+            resource,
+            reason: a.reason,
+            dependsOn: a.dependsOn,
+            estimatedSeconds: a.estimatedSeconds
+          };
+        }),
+        summary: novaPlan.summary,
+      };
 
       if (options.dryRun) {
         return {

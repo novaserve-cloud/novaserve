@@ -59,30 +59,7 @@ export class LocalProvider implements NovaProvider {
     return { valid: true, errors: [], warnings: [] };
   }
 
-  async plan(
-    resources: Resource[],
-    currentState: ResolvedResource[]
-  ): Promise<DeploymentPlan> {
-    const actions: DeploymentPlanAction[] = resources.map((r) => ({
-      action: "create" as const,
-      resource: r,
-      reason: "Local emulation",
-      dependsOn: r.dependencies,
-    }));
 
-    return {
-      appName: this.config?.name || "unknown",
-      provider: this.name,
-      environment: "local",
-      actions,
-      summary: {
-        create: actions.length,
-        update: 0,
-        delete: 0,
-        skip: 0,
-      },
-    };
-  }
 
   async deploy(plan: DeploymentPlan): Promise<DeployResult> {
     const startTime = Date.now();

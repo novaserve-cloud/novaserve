@@ -11,7 +11,13 @@ export interface NovaIRAppHeader {
   environment: string;
   region?: string;
   hash: string;
+}
+
+/** Non-deterministic build metadata — excluded from canonical hashing */
+export interface NovaIRBuildMetadata {
   createdIso: string;
+  novaVersion: string;
+  buildDurationMs?: number;
 }
 
 export type NovaIRResourceType =
@@ -66,4 +72,6 @@ export interface NovaIRGraph {
   capabilitiesRequired: string[];
   permissions: NovaIRPermission[];
   outputs: Record<string, NovaIROutput>;
+  /** Non-deterministic metadata — NOT included in canonical hash */
+  buildMetadata: NovaIRBuildMetadata;
 }

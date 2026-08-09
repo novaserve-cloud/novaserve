@@ -45,7 +45,7 @@ export function computeCanonicalHash(content: unknown): string {
     }
     return value;
   });
-  return createHash("sha256").update(sortedJson).digest("hex").slice(0, 16);
+  return createHash("sha256").update(sortedJson).digest("hex");
 }
 
 /** Map generic ResourceType to NovaIRResourceType */
@@ -217,13 +217,16 @@ export class NovaCompiler {
         environment,
         region,
         hash: appHash,
-        createdIso: new Date().toISOString(),
       },
       resources: irResources,
       dependencies,
       capabilitiesRequired: Array.from(new Set(requestedCapabilities.map((c) => c.capability))),
       permissions,
       outputs: {},
+      buildMetadata: {
+        createdIso: new Date().toISOString(),
+        novaVersion: "0.1.0",
+      },
     };
 
     const irValidation = this.validateIR(irGraph);
