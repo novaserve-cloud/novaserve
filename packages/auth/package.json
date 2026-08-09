@@ -1,6 +1,6 @@
 {
   "name": "novaserve-auth",
-  "version": "1.0.4",
+  "version": "1.2.0",
   "description": "Authentication and authorization utilities for NovaServe applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

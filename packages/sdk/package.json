@@ -1,6 +1,6 @@
 {
   "name": "novaserve-sdk",
-  "version": "1.0.4",
+  "version": "1.2.0",
   "description": "NovaServe SDK — TypeScript-first serverless configuration",
   "type": "module",
   "main": "./dist/index.js",

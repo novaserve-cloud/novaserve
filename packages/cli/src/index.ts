@@ -65,7 +65,7 @@ const program = new Command();
 program
   .name("nova")
   .description("NovaServe — The next-generation, cloud-agnostic serverless development framework.")
-  .version("1.0.4")
+  .version("1.2.0")
   .hook("preAction", () => {
     printBanner();
   });
