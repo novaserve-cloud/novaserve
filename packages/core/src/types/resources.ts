@@ -42,6 +42,14 @@ export interface ResolvedResource extends Resource {
   providerConfig?: Record<string, unknown>;
   /** Outputs after deployment */
   outputs?: Record<string, string>;
+  /** Cloud provider name ("aws" | "azure" | "local" | etc.) */
+  provider?: string;
+  /** Physical cloud resource ID / ARN / URI */
+  providerId?: string;
+  /** Cloud account ID or subscription ID */
+  account?: string;
+  /** Cloud region or location */
+  region?: string;
   /** Current status */
   status: ResourceStatus;
 }

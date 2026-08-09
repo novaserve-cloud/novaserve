@@ -6,7 +6,7 @@
  * and performs state integrity verification.
  */
 
-import { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync, copyFileSync, renameSync } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import type { ResolvedResource } from "../types/resources.js";
@@ -124,7 +124,7 @@ export class StateManager {
     return records[records.length - 2]!.resources;
   }
 
-  /** Save a new deployment record */
+  /** Save a new deployment record with enriched provider identity */
   public saveDeployment(
     appName: string,
     environment: string,
@@ -137,13 +137,19 @@ export class StateManager {
       this.deployments.set(key, []);
     }
 
+    const enrichedResources = resources.map((r) => ({
+      ...r,
+      provider: r.provider || provider,
+      providerId: r.providerId || r.id,
+    }));
+
     const record: DeploymentRecord = {
       id: this.generateId(),
       appName,
       environment,
       provider,
       status: "deployed",
-      resources,
+      resources: enrichedResources,
       createdAt: new Date().toISOString(),
     };
 
@@ -189,7 +195,10 @@ export class StateManager {
       if (obs) {
         if (obs.status === "deployed" && res.status !== "deployed") {
           res.status = "deployed";
-          if (obs.arn) res.id = obs.arn;
+          if (obs.arn) {
+            res.id = obs.arn;
+            res.providerId = obs.arn;
+          }
           reconciledCount++;
           updatedResources.push(res.name);
         } else if (obs.status === "missing" && res.status === "deployed") {
@@ -234,8 +243,26 @@ export class StateManager {
   private persist(): void {
     try {
       const filePath = join(this.stateDir, "deployments.json");
+      const tempPath = join(this.stateDir, "deployments.json.tmp");
+      const backupPath = join(this.stateDir, "deployments.json.bak");
+
       const data = Object.fromEntries(this.deployments);
-      writeFileSync(filePath, JSON.stringify(data, null, 2));
+      const jsonContent = JSON.stringify(data, null, 2);
+
+      // 1. Write to temp file first
+      writeFileSync(tempPath, jsonContent);
+
+      // 2. Backup existing state file if present
+      if (existsSync(filePath)) {
+        try {
+          copyFileSync(filePath, backupPath);
+        } catch {
+          // Ignore backup failure
+        }
+      }
+
+      // 3. Atomic rename to target path
+      renameSync(tempPath, filePath);
     } catch {
       // Best effort persist
     }
