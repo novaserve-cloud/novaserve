@@ -162,36 +162,41 @@ export class AWSProvider implements NovaProvider {
       });
     }
 
-    // Deploy infrastructure resources
-    for (const action of infraActions) {
-      try {
-        const result = await this.executeResourceAction(action, appName);
-        deployedResources.push(result);
-        if (result.outputs) {
-          Object.assign(outputs, result.outputs);
+    // Deploy infrastructure resources in parallel
+    const infraResults = await Promise.allSettled(
+      infraActions.map((action) => this.executeResourceAction(action, appName))
+    );
+
+    for (let i = 0; i < infraResults.length; i++) {
+      const res = infraResults[i]!;
+      const action = infraActions[i]!;
+      if (res.status === "fulfilled") {
+        deployedResources.push(res.value);
+        if (res.value.outputs) {
+          Object.assign(outputs, res.value.outputs);
         }
-      } catch (error) {
-        errors.push({
-          resource: action.resource.name,
-          error: error instanceof Error ? error.message : String(error),
-        });
+      } else {
+        const errMsg = res.reason instanceof Error ? res.reason.message : String(res.reason);
+        errors.push({ resource: action.resource.name, error: errMsg });
       }
     }
 
-    // Deploy Lambda functions
-    for (const action of functionActions) {
-      try {
-        const result = await this.executeResourceAction(action, appName);
-        deployedResources.push(result);
-        // Track ARN for API Gateway integration
-        if (result.id) {
-          functionArns[action.resource.name] = result.id;
+    // Deploy Lambda functions in parallel
+    const fnResults = await Promise.allSettled(
+      functionActions.map((action) => this.executeResourceAction(action, appName))
+    );
+
+    for (let i = 0; i < fnResults.length; i++) {
+      const res = fnResults[i]!;
+      const action = functionActions[i]!;
+      if (res.status === "fulfilled") {
+        deployedResources.push(res.value);
+        if (res.value.id) {
+          functionArns[action.resource.name] = res.value.id;
         }
-      } catch (error) {
-        errors.push({
-          resource: action.resource.name,
-          error: error instanceof Error ? error.message : String(error),
-        });
+      } else {
+        const errMsg = res.reason instanceof Error ? res.reason.message : String(res.reason);
+        errors.push({ resource: action.resource.name, error: errMsg });
       }
     }
 

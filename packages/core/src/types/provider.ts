@@ -45,15 +45,14 @@ export interface DeploymentPlanAction {
 
 /** Full deployment plan */
 export interface DeploymentPlan {
-  /** Application name */
+  version?: string;
   appName: string;
-  /** Provider name */
   provider: string;
-  /** Target environment */
   environment: string;
-  /** Ordered list of actions */
+  irHash?: string;
+  planHash?: string;
+  createdAt?: string;
   actions: DeploymentPlanAction[];
-  /** Summary statistics */
   summary: {
     create: number;
     update: number;

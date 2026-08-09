@@ -6,6 +6,7 @@
  */
 
 export { AWSProvider } from "./provider.js";
+export { AWSLiveStateInspector, type ObservedResourceState } from "./inspector.js";
 export { LambdaService } from "./services/lambda.js";
 export { IAMService } from "./services/iam.js";
 export { ApiGatewayService } from "./services/apigateway.js";

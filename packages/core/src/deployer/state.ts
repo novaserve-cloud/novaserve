@@ -170,6 +170,42 @@ export class StateManager {
     return this.deployments.get(key) || [];
   }
 
+  /** Reconcile state by checking live observed resources for UNKNOWN or missing items */
+  public reconcileState(
+    appName: string,
+    environment: string,
+    observedState: Record<string, { status: "deployed" | "missing" | "drifted"; arn?: string }>
+  ): { reconciledCount: number; updatedResources: string[] } {
+    const key = `${appName}:${environment}`;
+    const records = this.deployments.get(key) || [];
+    if (records.length === 0) return { reconciledCount: 0, updatedResources: [] };
+
+    const latest = records[records.length - 1]!;
+    let reconciledCount = 0;
+    const updatedResources: string[] = [];
+
+    for (const res of latest.resources) {
+      const obs = observedState[res.id] || observedState[`${res.type}-${res.name}`];
+      if (obs) {
+        if (obs.status === "deployed" && res.status !== "deployed") {
+          res.status = "deployed";
+          if (obs.arn) res.id = obs.arn;
+          reconciledCount++;
+          updatedResources.push(res.name);
+        } else if (obs.status === "missing" && res.status === "deployed") {
+          res.status = "failed";
+          reconciledCount++;
+          updatedResources.push(res.name);
+        }
+      }
+    }
+
+    if (reconciledCount > 0) {
+      this.persist();
+    }
+    return { reconciledCount, updatedResources };
+  }
+
   /** Generate a config hash for change detection */
   public static hashConfig(config: Record<string, unknown>): string {
     return createHash("sha256")

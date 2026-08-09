@@ -5,6 +5,7 @@
  * and monthly cost estimates directly from Nova IR graph comparisons.
  */
 
+import { createHash } from "node:crypto";
 import type { NovaIRGraph, NovaIRResource } from "../ir/schema.js";
 
 export interface ResourceDiffItem {
@@ -26,10 +27,13 @@ export interface NovaPlanAction {
 }
 
 export interface NovaPlanResult {
+  version: string;
   appName: string;
   environment: string;
   provider: string;
   irHash: string;
+  planHash: string;
+  createdAt: string;
   actions: NovaPlanAction[];
   summary: {
     create: number;
@@ -178,11 +182,23 @@ export class NovaPlanner {
       }
     }
 
-    return {
+    const planContent = JSON.stringify({
       appName: newIR.app.name,
       environment: newIR.app.environment,
       provider,
       irHash: newIR.app.hash,
+      actions,
+    });
+    const planHash = createHash("sha256").update(planContent).digest("hex");
+
+    return {
+      version: "1.0.0",
+      appName: newIR.app.name,
+      environment: newIR.app.environment,
+      provider,
+      irHash: newIR.app.hash,
+      planHash,
+      createdAt: new Date().toISOString(),
       actions,
       summary,
       totalEstimatedSeconds: Math.ceil(totalEstimatedSeconds * 0.7), // parallel reduction factor

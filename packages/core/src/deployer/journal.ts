@@ -1,9 +1,5 @@
-/**
- * Deployment Journal & Failure Recovery Engine
- *
- * Records step-by-step execution status for idempotent deployment retries,
- * handles UNKNOWN states gracefully, and enables safe recovery after crashes.
- */
+import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
 
 export type ExecutionState = "PENDING" | "RUNNING" | "SUCCESS" | "FAILED" | "UNKNOWN";
 
@@ -46,6 +42,19 @@ export class DeploymentJournal {
       createdIso: new Date().toISOString(),
       updatedIso: new Date().toISOString(),
     };
+  }
+
+  /** Create instance from existing record */
+  public static fromRecord(record: DeploymentJournalRecord): DeploymentJournal {
+    const journal = new DeploymentJournal(
+      record.deploymentId,
+      record.appName,
+      record.environment,
+      record.provider,
+      record.planHash
+    );
+    journal.record = record;
+    return journal;
   }
 
   /** Start resource execution */
@@ -100,6 +109,44 @@ export class DeploymentJournal {
   /** Get journal record JSON */
   public getRecord(): DeploymentJournalRecord {
     return this.record;
+  }
+
+  /** Save journal record to disk under .nova/deployments/<id>.json */
+  public saveToDisk(projectRoot: string): void {
+    const dir = join(projectRoot, ".nova", "deployments");
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+    const filePath = join(dir, `${this.record.deploymentId}.json`);
+    writeFileSync(filePath, JSON.stringify(this.record, null, 2), "utf-8");
+  }
+
+  /** Load journal record from disk */
+  public static loadFromDisk(projectRoot: string, deploymentId: string): DeploymentJournalRecord | null {
+    const filePath = join(projectRoot, ".nova", "deployments", `${deploymentId}.json`);
+    if (!existsSync(filePath)) return null;
+    try {
+      return JSON.parse(readFileSync(filePath, "utf-8"));
+    } catch {
+      return null;
+    }
+  }
+
+  /** List all stored deployment journals */
+  public static listJournals(projectRoot: string): DeploymentJournalRecord[] {
+    const dir = join(projectRoot, ".nova", "deployments");
+    if (!existsSync(dir)) return [];
+    const files = readdirSync(dir).filter((f) => f.endsWith(".json"));
+    const records: DeploymentJournalRecord[] = [];
+    for (const f of files) {
+      try {
+        const content = readFileSync(join(dir, f), "utf-8");
+        records.push(JSON.parse(content));
+      } catch {
+        // Skip unparseable files
+      }
+    }
+    return records.sort((a, b) => new Date(b.createdIso).getTime() - new Date(a.createdIso).getTime());
   }
 
   private updateGlobalStatus(): void {

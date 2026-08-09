@@ -5,6 +5,8 @@
  * Config → Validate → Build → Plan → Deploy → Save State
  */
 
+import { readFileSync, existsSync, mkdirSync, writeFileSync, unlinkSync } from "node:fs";
+import { join } from "node:path";
 import type { NovaApp } from "novaserve-sdk";
 import type { NovaProvider, DeploymentPlan, DeployResult } from "../types/provider.js";
 import type { Resource, ResolvedResource } from "../types/resources.js";
@@ -21,6 +23,8 @@ import { NovaPlanner } from "./planner.js";
 export interface DeployOptions {
   /** Target environment (default: "production") */
   environment?: string;
+  /** Pre-approved plan file path */
+  planFile?: string;
   /** Skip confirmation prompt */
   force?: boolean;
   /** Dry run — show plan without deploying */
@@ -56,6 +60,9 @@ export class DeploymentEngine {
   async deploy(app: NovaApp, options: DeployOptions = {}): Promise<DeployResult> {
     const environment = options.environment || "production";
     const startTime = Date.now();
+
+    // Acquire deployment lock
+    this.stateManager.acquireLock(app.name, environment);
 
     try {
       // 1. Validate config
@@ -125,6 +132,22 @@ export class DeploymentEngine {
         resources,
       });
 
+      // Verify plan file if provided
+      if (options.planFile) {
+        if (!existsSync(options.planFile)) {
+          throw new Error(`[NovaServe] Plan file not found: ${options.planFile}`);
+        }
+        const planJson = JSON.parse(readFileSync(options.planFile, "utf-8"));
+        if (planJson.irHash && planJson.irHash !== compileResult.ir.app.hash) {
+          throw new Error(
+            `[NovaServe] ERROR: Deployment plan is stale.\n\n` +
+            `Plan IR:\n${planJson.irHash}\n\n` +
+            `Current IR:\n${compileResult.ir.app.hash}\n\n` +
+            `Run: nova plan --save ${options.planFile}`
+          );
+        }
+      }
+
       const activeState: Record<string, { configHash: string; config: Record<string, unknown> }> = {};
       for (const res of currentState) {
         activeState[`${res.type}-${res.name}`] = { configHash: res.configHash, config: res.config };
@@ -132,15 +155,29 @@ export class DeploymentEngine {
 
       const novaPlan = NovaPlanner.plan(compileResult.ir, activeState, this.provider.name);
 
+      // Initialize DeploymentJournal
+      const deploymentId = `dep-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const { DeploymentJournal } = await import("./journal.js");
+      const journal = new DeploymentJournal(
+        deploymentId,
+        app.name,
+        environment,
+        this.provider.name,
+        novaPlan.planHash
+      );
+
       // Map NovaPlanResult to DeploymentPlan format
       const plan: DeploymentPlan = {
+        version: novaPlan.version,
         appName: novaPlan.appName,
         provider: novaPlan.provider,
         environment: novaPlan.environment,
+        irHash: novaPlan.irHash,
+        planHash: novaPlan.planHash,
+        createdAt: novaPlan.createdAt,
         actions: novaPlan.actions.map(a => {
           let resource = resources.find(r => r.name === a.name && r.type === a.resourceType);
           if (!resource) {
-             // For deletions
              const stateRes = currentState.find(r => r.name === a.name && r.type === a.resourceType);
              resource = stateRes ? { type: stateRes.type, name: stateRes.name, config: stateRes.config, dependencies: stateRes.dependencies } as Resource : { type: a.resourceType as any, name: a.name, config: {}, dependencies: [] };
           }
@@ -176,7 +213,27 @@ export class DeploymentEngine {
         environment,
       });
 
+      for (const action of plan.actions) {
+        const resId = `${action.resource.type}-${action.resource.name}`;
+        journal.startResource(resId, action.resource.type, action.resource.name, action.action.toUpperCase() as any);
+      }
+
       const result = await this.provider.deploy(plan);
+
+      // Update journal entries
+      if (result.success) {
+        for (const res of result.resources) {
+          const resId = `${res.type}-${res.name}`;
+          journal.markSuccess(resId, res.id);
+        }
+      } else {
+        for (const err of result.errors) {
+          const resId = err.resource;
+          journal.markFailure(resId, err.error);
+        }
+      }
+
+      journal.saveToDisk(this.projectRoot);
 
       // 10. Save state
       if (result.success) {
@@ -210,6 +267,8 @@ export class DeploymentEngine {
         error: error instanceof Error ? error.message : String(error),
       });
       throw error;
+    } finally {
+      this.stateManager.releaseLock(app.name, environment);
     }
   }
 

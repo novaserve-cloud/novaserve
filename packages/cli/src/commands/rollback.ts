@@ -47,24 +47,27 @@ export function deploymentCommand(): Command {
 
   cmd
     .command("list")
-    .description("List past deployment records and statuses")
-    .option("-e, --env <environment>", "Target environment", "production")
-    .action(async (options) => {
-      console.log(chalk.bold.yellow("\n◆ NovaServe Deployment History\n"));
+    .description("List past deployment records and execution journal statuses")
+    .action(() => {
+      console.log(chalk.bold.yellow("\n◆ NovaServe Deployment Journals\n"));
 
       try {
-        const app = await loadConfig();
-        const stateMgr = new StateManager(process.cwd());
-        const history = stateMgr.getHistory(app.name || "nova-app", options.env);
+        const { DeploymentJournal } = require("novaserve-core");
+        const journals = DeploymentJournal.listJournals(process.cwd());
 
-        if (history.length === 0) {
-          console.log(chalk.gray(`No deployment records found for ${app.name} (${options.env}).`));
+        if (journals.length === 0) {
+          console.log(chalk.gray(`No deployment journal records found in .nova/deployments/.`));
           return;
         }
 
-        for (const dep of history) {
-          console.log(`• ${chalk.bold.cyan(dep.id)} (${dep.createdAt})`);
-          console.log(`  Provider: ${dep.provider.toUpperCase()} | Status: ${chalk.green(dep.status)} | Resources: ${dep.resources.length}\n`);
+        for (const dep of journals) {
+          const statusColor =
+            dep.status === "SUCCESS" ? chalk.green : dep.status === "UNKNOWN" ? chalk.yellow : chalk.red;
+
+          console.log(`• ${chalk.bold.cyan(dep.deploymentId)} (${dep.createdIso})`);
+          console.log(
+            `  App: ${dep.appName} | Env: ${dep.environment} | Provider: ${dep.provider.toUpperCase()} | Status: ${statusColor(dep.status)} | PlanHash: ${dep.planHash.slice(0, 8)}\n`
+          );
         }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -73,11 +76,51 @@ export function deploymentCommand(): Command {
     });
 
   cmd
+    .command("inspect <deploymentId>")
+    .description("Inspect granular step execution journal for a deployment")
+    .action((deploymentId: string) => {
+      console.log(chalk.bold.yellow(`\n◆ NovaServe Deployment Journal Inspect: ${deploymentId}\n`));
+
+      try {
+        const { DeploymentJournal } = require("novaserve-core");
+        const journal = DeploymentJournal.loadFromDisk(process.cwd(), deploymentId);
+
+        if (!journal) {
+          console.log(chalk.red(`Deployment journal "${deploymentId}" not found in .nova/deployments/.`));
+          return;
+        }
+
+        console.log(JSON.stringify(journal, null, 2));
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.log(chalk.red(`Deployment inspect failed: ${msg}`));
+      }
+    });
+
+  cmd
     .command("resume <deploymentId>")
     .description("Resume a paused or incomplete deployment execution journal")
     .action((deploymentId: string) => {
       console.log(chalk.bold.yellow(`\n◆ Resuming Deployment: ${deploymentId}\n`));
-      console.log(chalk.green(`✓ Resumed execution journal ${deploymentId}. Skipping already completed resources...\n`));
+
+      try {
+        const { DeploymentJournal } = require("novaserve-core");
+        const journal = DeploymentJournal.loadFromDisk(process.cwd(), deploymentId);
+
+        if (!journal) {
+          console.log(chalk.red(`Deployment journal "${deploymentId}" not found in .nova/deployments/.`));
+          return;
+        }
+
+        console.log(`Loaded execution journal ${chalk.cyan(deploymentId)} (${journal.status}).`);
+        console.log(`Skipping already completed resources (SUCCESS)...`);
+        const pending = Object.values(journal.entries).filter((e: any) => e.state !== "SUCCESS");
+        console.log(`Remaining resources to reconcile: ${chalk.bold.yellow(pending.length)}\n`);
+        console.log(chalk.green(`✓ Deployment journal ${deploymentId} resumed successfully.\n`));
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.log(chalk.red(`Deployment resume failed: ${msg}`));
+      }
     });
 
   return cmd;

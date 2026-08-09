@@ -41,4 +41,43 @@ describe("Production Hardening & Failure Injection Suite", () => {
 
     expect(hashA).toBe(hashB);
   });
+
+  it("persists and loads deployment journals from disk", () => {
+    const journal = new DeploymentJournal("dep-test-disk", "my-app", "production", "aws", "plan-hash-999");
+    journal.startResource("fn-1", "function", "hello", "CREATE");
+    journal.markSuccess("fn-1", "arn:aws:lambda:us-east-1:123:hello");
+    journal.saveToDisk(process.cwd());
+
+    const loaded = DeploymentJournal.loadFromDisk(process.cwd(), "dep-test-disk");
+    expect(loaded).not.toBeNull();
+    expect(loaded?.deploymentId).toBe("dep-test-disk");
+    expect(loaded?.entries["fn-1"]?.arn).toBe("arn:aws:lambda:us-east-1:123:hello");
+
+    const allJournals = DeploymentJournal.listJournals(process.cwd());
+    expect(allJournals.some((j) => j.deploymentId === "dep-test-disk")).toBe(true);
+  });
+
+  it("reconciles unknown resource state using observed state", () => {
+    const mgr = new StateManager(process.cwd());
+    mgr.saveDeployment("reconcile-app", "production", "aws", [
+      {
+        type: "function",
+        name: "hello",
+        id: "func-hello-pending",
+        config: {},
+        dependencies: [],
+        configHash: "abc",
+        status: "failed",
+      },
+    ]);
+
+    const result = mgr.reconcileState("reconcile-app", "production", {
+      "function-hello": { status: "deployed", arn: "arn:aws:lambda:us-east-1:123:hello" },
+    });
+
+    expect(result.reconciledCount).toBe(1);
+    const resources = mgr.getResources("reconcile-app", "production");
+    expect(resources[0]?.status).toBe("deployed");
+    expect(resources[0]?.id).toBe("arn:aws:lambda:us-east-1:123:hello");
+  });
 });

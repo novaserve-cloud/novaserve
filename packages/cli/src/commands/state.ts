@@ -110,5 +110,42 @@ export function stateCommand(): Command {
       }
     });
 
+  cmd
+    .command("reconcile")
+    .description("Query live cloud infrastructure to reconcile UNKNOWN or uncertain resource states")
+    .option("-e, --env <environment>", "Target environment", "production")
+    .action(async (options) => {
+      console.log(chalk.bold.yellow("\n◆ NovaServe State Reconciliation\n"));
+
+      try {
+        const app = await loadConfig();
+        const stateMgr = new StateManager(process.cwd());
+        const resources = stateMgr.getResources(app.name || "nova-app", options.env);
+
+        if (resources.length === 0) {
+          console.log(chalk.gray(`State is empty. Nothing to reconcile.`));
+          return;
+        }
+
+        console.log(`Inspecting live cloud state for ${resources.length} resource(s)...`);
+        const { AWSLiveStateInspector } = await import("novaserve-provider-aws");
+        const inspector = new AWSLiveStateInspector(app.config.region || "us-east-1", app.name || "nova-app");
+        const observed = await inspector.inspectResources(
+          resources.map((r: any) => ({ id: r.id, type: r.type, name: r.name, config: r.config }))
+        );
+
+        const result = stateMgr.reconcileState(app.name || "nova-app", options.env, observed);
+
+        if (result.reconciledCount === 0) {
+          console.log(chalk.bold.green(`✓ All ${resources.length} resource states match live infrastructure.\n`));
+        } else {
+          console.log(chalk.bold.green(`✓ Reconciled ${result.reconciledCount} resource(s): ${result.updatedResources.join(", ")}\n`));
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.log(chalk.red(`State reconciliation failed: ${msg}`));
+      }
+    });
+
   return cmd;
 }

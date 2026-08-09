@@ -85,6 +85,7 @@ export function deployCommand(): Command {
           `Deploying ${app.resources.length} resource(s)...`,
           () => engine.deploy(app, {
             environment,
+            planFile: options.plan,
             dryRun: options.dryRun,
             force: options.force,
           })
