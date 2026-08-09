@@ -35,7 +35,13 @@ export class ProductionSafetyEngine {
     const isProduction = (options.environment || plan.environment) === "production";
 
     for (const action of plan.actions) {
-      const config = action.resource.config || {};
+      const rawRes = action.resource;
+      const res = rawRes || {
+        type: (action as any).resourceType || "unknown",
+        name: (action as any).name || "unknown",
+        config: {},
+      };
+      const config = res.config || {};
       const isProtected = Boolean(config.deletionProtection || config.preventDestroy);
 
       // 1. Enforce deletion protection on stateful resources
@@ -43,7 +49,7 @@ export class ProductionSafetyEngine {
         if (!options.forceDestroyProtectedResources) {
           blockedActions.push(action);
           warnings.push(
-            `Protected resource "${action.resource.name}" (${action.resource.type}) cannot be ${action.action}d because deletionProtection is enabled.`
+            `Protected resource "${res?.name || 'unknown'}" (${res?.type || 'unknown'}) cannot be ${action.action}d because deletionProtection is enabled.`
           );
         }
       }
@@ -55,7 +61,7 @@ export class ProductionSafetyEngine {
             blockedActions.push(action);
           }
           warnings.push(
-            `Destructive action "${action.action}" on "${action.resource.name}" blocked in production environment without explicit approval.`
+            `Destructive action "${action.action}" on "${res?.name || 'unknown'}" blocked in production environment without explicit approval.`
           );
         }
       }
