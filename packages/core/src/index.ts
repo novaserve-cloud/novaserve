@@ -21,6 +21,7 @@ export { Packager } from "./builder/packager.js";
 export { DeploymentEngine } from "./deployer/engine.js";
 export { InfrastructureDiff } from "./deployer/diff.js";
 export { StateManager } from "./deployer/state.js";
+export { ProductionSafetyEngine, ProductionSafetyError } from "./deployer/safety.js";
 
 // Types
 export type {
