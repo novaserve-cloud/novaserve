@@ -11,6 +11,7 @@ import { S3Service } from "./services/s3.js";
 import { SQSService } from "./services/sqs.js";
 import { DynamoDBService } from "./services/dynamodb.js";
 import { ApiGatewayService } from "./services/apigateway.js";
+import { IAMService } from "./services/iam.js";
 
 export interface ObservedResourceState {
   resourceId: string;
@@ -80,6 +81,13 @@ export class AWSLiveStateInspector {
               liveConfig.memory = state.memorySize;
               liveConfig.timeout = state.timeout;
               liveConfig.runtime = state.runtime;
+
+              // Inspect IAM Execution Role
+              const iam = new IAMService(this.region);
+              const roleName = `${this.appName}-${res.name}-role`;
+              const roleArn = await iam.getRole(roleName);
+              liveConfig.roleArn = roleArn;
+              liveConfig.roleExists = Boolean(roleArn);
             }
             break;
           }

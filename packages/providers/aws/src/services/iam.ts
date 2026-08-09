@@ -13,6 +13,7 @@ import {
   PutRolePolicyCommand,
   DeleteRolePolicyCommand,
   GetRoleCommand,
+  GetRolePolicyCommand,
   AttachRolePolicyCommand,
   ListAttachedRolePoliciesCommand,
   DetachRolePolicyCommand,
@@ -40,7 +41,81 @@ export class IAMService {
   }
 
   /**
-   * Create a Lambda execution role with the basic Lambda execution policy
+   * Synthesize least-privilege IAM permissions from Nova IR graph resource dependencies
+   */
+  public synthesizeGraphPermissions(
+    dependencies: string[],
+    allResources: Array<{ type: string; name: string }>,
+    appName: string,
+    region: string,
+    accountId = "*"
+  ): NovaIRPermission[] {
+    const permissions: NovaIRPermission[] = [];
+    const resourceMap = new Map<string, { type: string; name: string }>();
+
+    for (const r of allResources) {
+      resourceMap.set(r.name, r);
+    }
+
+    for (const depName of dependencies) {
+      const target = resourceMap.get(depName);
+      if (!target) continue;
+
+      const physicalName = `${appName}-${depName}`;
+
+      switch (target.type) {
+        case "storage":
+          permissions.push({
+            id: `perm-${appName}-${depName}-storage`,
+            targetFunction: depName,
+            actions: ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"],
+            resources: [`arn:aws:s3:::${physicalName}/*`, `arn:aws:s3:::${physicalName}`],
+            reason: `Graph binding access to S3 storage "${depName}"`,
+          });
+          break;
+
+        case "queue":
+          permissions.push({
+            id: `perm-${appName}-${depName}-queue`,
+            targetFunction: depName,
+            actions: [
+              "sqs:SendMessage",
+              "sqs:ReceiveMessage",
+              "sqs:DeleteMessage",
+              "sqs:GetQueueAttributes",
+            ],
+            resources: [`arn:aws:sqs:${region}:${accountId}:${physicalName}`],
+            reason: `Graph binding access to SQS queue "${depName}"`,
+          });
+          break;
+
+        case "database":
+          permissions.push({
+            id: `perm-${appName}-${depName}-database`,
+            targetFunction: depName,
+            actions: [
+              "dynamodb:GetItem",
+              "dynamodb:PutItem",
+              "dynamodb:UpdateItem",
+              "dynamodb:DeleteItem",
+              "dynamodb:Query",
+              "dynamodb:Scan",
+            ],
+            resources: [
+              `arn:aws:dynamodb:${region}:${accountId}:table/${physicalName}`,
+              `arn:aws:dynamodb:${region}:${accountId}:table/${physicalName}/index/*`,
+            ],
+            reason: `Graph binding access to DynamoDB table "${depName}"`,
+          });
+          break;
+      }
+    }
+
+    return permissions;
+  }
+
+  /**
+   * Create a Lambda execution role with basic Lambda execution policy
    * and an inline policy derived from Nova IR permissions.
    */
   async createExecutionRole(
@@ -60,7 +135,7 @@ export class IAMService {
             { Key: "novaserve:application", Value: appName },
             { Key: "novaserve:environment", Value: environment },
             { Key: "novaserve:resource", Value: roleName },
-            { Key: "novaserve:version", Value: "1.0.0" },
+            { Key: "novaserve:version", Value: "2.0.0" },
           ],
         })
       )
@@ -78,7 +153,7 @@ export class IAMService {
       )
     );
 
-    // Attach least-privilege inline policy from Nova IR if permissions exist
+    // Attach least-privilege inline policy from Nova IR
     await this.updateExecutionRolePolicy(roleName, permissions, appName);
 
     // Exponential backoff waiter for IAM role propagation
@@ -91,6 +166,23 @@ export class IAMService {
     );
 
     return roleArn;
+  }
+
+  /**
+   * Fetch inline role policy document for an IAM role
+   */
+  async getRolePolicy(roleName: string, policyName: string): Promise<string | null> {
+    try {
+      const res = await awsRetry(() =>
+        this.client.send(new GetRolePolicyCommand({ RoleName: roleName, PolicyName: policyName }))
+      );
+      return res.PolicyDocument ? decodeURIComponent(res.PolicyDocument) : null;
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "NoSuchEntityException") {
+        return null;
+      }
+      throw err;
+    }
   }
 
   /**
@@ -126,15 +218,23 @@ export class IAMService {
       Resource: p.resources,
     }));
 
+    const newPolicyDoc = JSON.stringify({
+      Version: "2012-10-17",
+      Statement: statements,
+    });
+
+    // Check if live policy is identical to skip redundant API call
+    const currentDoc = await this.getRolePolicy(roleName, policyName);
+    if (currentDoc && currentDoc === newPolicyDoc) {
+      return;
+    }
+
     await awsRetry(() =>
       this.client.send(
         new PutRolePolicyCommand({
           RoleName: roleName,
           PolicyName: policyName,
-          PolicyDocument: JSON.stringify({
-            Version: "2012-10-17",
-            Statement: statements,
-          }),
+          PolicyDocument: newPolicyDoc,
         })
       )
     );

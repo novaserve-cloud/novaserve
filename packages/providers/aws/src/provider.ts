@@ -29,7 +29,7 @@ import type {
   ValidationResult,
   DeploymentPlanAction,
 } from "novaserve-core";
-import type { Resource, ResolvedResource } from "novaserve-core";
+import type { Resource, ResolvedResource, NovaIRPermission } from "novaserve-core";
 import type { NovaAppConfig } from "novaserve-sdk";
 
 import { LambdaService } from "./services/lambda.js";
@@ -162,9 +162,11 @@ export class AWSProvider implements NovaProvider {
       });
     }
 
+    const allResources = plan.actions.map((a) => a.resource);
+
     // Deploy infrastructure resources in parallel
     const infraResults = await Promise.allSettled(
-      infraActions.map((action) => this.executeResourceAction(action, appName))
+      infraActions.map((action) => this.executeResourceAction(action, appName, allResources))
     );
 
     for (let i = 0; i < infraResults.length; i++) {
@@ -183,7 +185,7 @@ export class AWSProvider implements NovaProvider {
 
     // Deploy Lambda functions in parallel
     const fnResults = await Promise.allSettled(
-      functionActions.map((action) => this.executeResourceAction(action, appName))
+      functionActions.map((action) => this.executeResourceAction(action, appName, allResources))
     );
 
     for (let i = 0; i < fnResults.length; i++) {
@@ -350,7 +352,8 @@ export class AWSProvider implements NovaProvider {
    */
   private async executeResourceAction(
     action: DeploymentPlanAction,
-    appName: string
+    appName: string,
+    allResources: Resource[] = []
   ): Promise<ResolvedResource> {
     const resource = action.resource;
     const resourceName = `${appName}-${resource.name}`;
@@ -360,10 +363,21 @@ export class AWSProvider implements NovaProvider {
     switch (resource.type) {
       case "function": {
         const roleName = `${appName}-${resource.name}-role`;
+        const explicitPerms = (resource.config.permissions as NovaIRPermission[]) || [];
+        const graphPerms = this.iam.synthesizeGraphPermissions(
+          resource.dependencies || [],
+          allResources,
+          appName,
+          this.region
+        );
+        const combinedPermissions = [...explicitPerms, ...graphPerms];
+
         let roleArn = await this.iam.getRole(roleName);
 
         if (!roleArn) {
-          roleArn = await this.iam.createExecutionRole(roleName, [], appName);
+          roleArn = await this.iam.createExecutionRole(roleName, combinedPermissions, appName);
+        } else {
+          await this.iam.updateExecutionRolePolicy(roleName, combinedPermissions, appName);
         }
 
         const codePath = join(process.cwd(), ".nova", "build", `fn-${resource.name}`);
@@ -391,8 +405,6 @@ export class AWSProvider implements NovaProvider {
             timeout,
             environment: (resource.config.environment as Record<string, string>) || {},
           });
-          const permissions = (resource.config.permissions as any[]) || [];
-          await this.iam.updateExecutionRolePolicy(roleName, permissions, appName);
         } else if (action.action === "replace") {
           await this.lambda.deleteFunction(resourceName);
           arn = await this.lambda.createFunction({
