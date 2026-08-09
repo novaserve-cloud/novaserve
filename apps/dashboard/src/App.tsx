@@ -1346,6 +1346,7 @@ function DeploymentRow({
 function ResourcesSection({ searchQuery }: { searchQuery: string }) {
   const [typeFilter, setTypeFilter] = useState('all');
   const [defineModalOpen, setDefineModalOpen] = useState(false);
+  const [inspectedResource, setInspectedResource] = useState<{ name: string; type: string; runtime: string; status: string; details: string } | null>(null);
   const [newResName, setNewResName] = useState('');
   const [newResType, setNewResType] = useState('Function');
   const [newResConfig, setNewResConfig] = useState('memory: 512MB');
@@ -1385,6 +1386,17 @@ function ResourcesSection({ searchQuery }: { searchQuery: string }) {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  const handleDeleteResource = (name: string) => {
+    setResources(resources.filter((r) => r.name !== name));
+    setToastMessage(`Unmounted resource "${name}" from Nova IR graph.`);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleOpenEndpoint = (r: { name: string; type: string }) => {
+    setToastMessage(`Navigating to live cloud endpoint for ${r.name}...`);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
   const filtered = resources.filter(
     (r) =>
       (r.name.toLowerCase().includes(searchQuery.toLowerCase()) || r.type.toLowerCase().includes(searchQuery.toLowerCase())) &&
@@ -1397,6 +1409,74 @@ function ResourcesSection({ searchQuery }: { searchQuery: string }) {
         <div className="bg-emerald-50 text-emerald-800 border border-emerald-300 px-4 py-2.5 rounded-lg text-xs font-semibold flex items-center justify-between shadow-xs transition-all">
           <span>✓ {toastMessage}</span>
           <button onClick={() => setToastMessage(null)} className="text-emerald-600 hover:text-emerald-950 font-bold ml-4">✕</button>
+        </div>
+      )}
+
+      {/* Inspect Resource Details Modal */}
+      {inspectedResource && (
+        <div className="fixed inset-0 bg-gray-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-2xl max-w-lg w-full p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Box className="w-4 h-4 text-amber-500" />
+                <h3 className="text-sm font-bold text-gray-950 font-mono">{inspectedResource.name}</h3>
+              </div>
+              <button
+                onClick={() => setInspectedResource(null)}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-2 bg-gray-50 p-3 rounded-lg border border-gray-200 font-mono">
+                <div>
+                  <span className="text-gray-400 block text-[10px] uppercase">Type</span>
+                  <span className="font-bold text-gray-900">{inspectedResource.type}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400 block text-[10px] uppercase">Runtime</span>
+                  <span className="font-bold text-gray-900">{inspectedResource.runtime}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400 block text-[10px] uppercase">Status</span>
+                  <span className="font-bold text-emerald-600">● {inspectedResource.status}</span>
+                </div>
+                <div>
+                  <span className="text-gray-400 block text-[10px] uppercase">Spec</span>
+                  <span className="font-bold text-gray-900">{inspectedResource.details}</span>
+                </div>
+              </div>
+
+              <div>
+                <span className="block text-xs font-semibold text-gray-700 mb-1">Generated Nova IR Graph Definition</span>
+                <pre className="bg-gray-950 text-amber-300 p-3 rounded-lg font-mono text-[11px] overflow-x-auto">
+{JSON.stringify(
+  {
+    logicalId: inspectedResource.name,
+    type: inspectedResource.type,
+    runtime: inspectedResource.runtime,
+    status: inspectedResource.status,
+    managedBy: 'novaserve-core',
+    config: { details: inspectedResource.details }
+  },
+  null,
+  2
+)}
+                </pre>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-3 border-t border-gray-100">
+              <button
+                onClick={() => setInspectedResource(null)}
+                className="btn-secondary text-xs py-1.5 px-4"
+              >
+                Close Inspector
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1545,9 +1625,29 @@ function ResourcesSection({ searchQuery }: { searchQuery: string }) {
                 </td>
                 <td className="px-5 py-3 font-mono text-gray-500">{r.details}</td>
                 <td className="px-5 py-3 text-right">
-                  <button className="text-gray-400 hover:text-gray-700 p-1">
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      onClick={() => setInspectedResource(r)}
+                      className="text-gray-400 hover:text-amber-600 p-1.5 rounded hover:bg-amber-50 transition-colors"
+                      title="Inspect Resource Specs"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleOpenEndpoint(r)}
+                      className="text-gray-400 hover:text-gray-700 p-1.5 rounded hover:bg-gray-100 transition-colors"
+                      title="Open Live Endpoint"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteResource(r.name)}
+                      className="text-gray-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50 transition-colors"
+                      title="Unmount Resource"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
