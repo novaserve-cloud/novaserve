@@ -2,23 +2,28 @@
  * AWS API Gateway v2 (HTTP API) Service — Real Operations
  *
  * Creates HTTP APIs, routes, and Lambda integrations using AWS SDK v3.
- * Supports incremental route diffing (additions/removals) without HTTP API recreation,
+ * Supports incremental route diffing, target function updating, integration/permission cleanup,
  * full ownership tagging, and exponential backoff retry handling.
  */
 
 import {
   ApiGatewayV2Client,
   CreateApiCommand,
+  UpdateApiCommand,
   DeleteApiCommand,
   CreateIntegrationCommand,
+  UpdateIntegrationCommand,
+  DeleteIntegrationCommand,
+  GetIntegrationsCommand,
   CreateRouteCommand,
   DeleteRouteCommand,
   CreateStageCommand,
+  UpdateStageCommand,
   GetApisCommand,
   GetRoutesCommand,
   type Api,
 } from "@aws-sdk/client-apigatewayv2";
-import { LambdaClient, AddPermissionCommand } from "@aws-sdk/client-lambda";
+import { LambdaClient, AddPermissionCommand, RemovePermissionCommand } from "@aws-sdk/client-lambda";
 import { awsRetry } from "../utils/retry.js";
 
 export interface ApiGatewayResult {
@@ -65,7 +70,7 @@ export class ApiGatewayService {
             "novaserve:application": appName,
             "novaserve:environment": environment,
             "novaserve:resource": apiName,
-            "novaserve:version": "1.0.0",
+            "novaserve:version": "2.0.0",
           },
         })
       )
@@ -92,7 +97,7 @@ export class ApiGatewayService {
   }
 
   /**
-   * Update an existing HTTP API in-place by diffing routes (adding new, deleting removed)
+   * Update an existing HTTP API in-place by diffing routes (adding new, updating target, deleting removed)
    */
   async updateHttpApi(
     apiId: string,
@@ -100,32 +105,82 @@ export class ApiGatewayService {
     functionArns: Record<string, string>,
     appName: string
   ): Promise<void> {
-    // Get existing routes
+    // 1. Fetch existing routes & integrations
     const getRoutesRes = await awsRetry(() =>
       this.client.send(new GetRoutesCommand({ ApiId: apiId }))
     );
-    const existingItems = getRoutesRes.Items || [];
-    const existingRouteKeys = new Map<string, string>(); // routeKey -> routeId
+    const getIntegrationsRes = await awsRetry(() =>
+      this.client.send(new GetIntegrationsCommand({ ApiId: apiId }))
+    );
 
+    const existingItems = getRoutesRes.Items || [];
+    const existingIntegrations = new Map<string, string>(); // integrationId -> integrationUri
+    for (const integ of getIntegrationsRes.Items || []) {
+      if (integ.IntegrationId && integ.IntegrationUri) {
+        existingIntegrations.set(integ.IntegrationId, integ.IntegrationUri);
+      }
+    }
+
+    const existingRoutes = new Map<string, { routeId: string; target?: string }>(); // routeKey -> { routeId, target }
     for (const r of existingItems) {
       if (r.RouteKey && r.RouteId) {
-        existingRouteKeys.set(r.RouteKey, r.RouteId);
+        existingRoutes.set(r.RouteKey, { routeId: r.RouteId, target: r.Target });
       }
     }
 
     const desiredKeys = new Set(Object.keys(routes));
 
-    // Delete removed routes
-    for (const [routeKey, routeId] of existingRouteKeys.entries()) {
+    // 2. Delete removed routes & orphan integrations & Lambda permissions
+    for (const [routeKey, routeInfo] of existingRoutes.entries()) {
       if (!desiredKeys.has(routeKey)) {
         await awsRetry(() =>
-          this.client.send(new DeleteRouteCommand({ ApiId: apiId, RouteId: routeId }))
+          this.client.send(new DeleteRouteCommand({ ApiId: apiId, RouteId: routeInfo.routeId }))
         );
+
+        if (routeInfo.target && routeInfo.target.startsWith("integrations/")) {
+          const integId = routeInfo.target.replace("integrations/", "");
+          try {
+            await awsRetry(() =>
+              this.client.send(new DeleteIntegrationCommand({ ApiId: apiId, IntegrationId: integId }))
+            );
+          } catch {
+            // Ignore if integration already removed
+          }
+        }
+
+        const statementId = `apigateway-${apiId}-${routeKey.replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-_]/g, "")}`;
+        try {
+          await awsRetry(() =>
+            this.lambdaClient.send(
+              new RemovePermissionCommand({
+                FunctionName: `${appName}-${routeKey.split(/\s+/).pop()?.replace(/[^a-zA-Z0-9-_]/g, "") || "fn"}`,
+                StatementId: statementId,
+              })
+            )
+          );
+        } catch {
+          // Ignore permission removal error
+        }
       }
     }
 
-    // Add new or update routes
-    await this.syncRoutes(apiId, routes, functionArns, appName, existingRouteKeys);
+    // 3. Add or update desired routes
+    await this.syncRoutes(apiId, routes, functionArns, appName, existingRoutes, existingIntegrations);
+
+    // 4. Ensure stage auto-deploy remains enabled
+    try {
+      await awsRetry(() =>
+        this.client.send(
+          new UpdateStageCommand({
+            ApiId: apiId,
+            StageName: "$default",
+            AutoDeploy: true,
+          })
+        )
+      );
+    } catch {
+      // Stage exists and auto-deploy is active
+    }
   }
 
   /** Delete an HTTP API */
@@ -153,15 +208,38 @@ export class ApiGatewayService {
     routes: Record<string, string>,
     functionArns: Record<string, string>,
     appName: string,
-    existingRouteKeys?: Map<string, string>
+    existingRoutes?: Map<string, { routeId: string; target?: string }>,
+    existingIntegrations?: Map<string, string>
   ): Promise<void> {
     for (const [routeKey, handlerRef] of Object.entries(routes)) {
-      if (existingRouteKeys && existingRouteKeys.has(routeKey)) {
-        continue; // Route already exists
-      }
-
       const functionArn = functionArns[handlerRef];
       if (!functionArn) continue;
+
+      const existingRoute = existingRoutes?.get(routeKey);
+
+      if (existingRoute && existingRoute.target) {
+        const integId = existingRoute.target.replace("integrations/", "");
+        const currentUri = existingIntegrations?.get(integId);
+
+        // If target function ARN matches current integration, route is up-to-date
+        if (currentUri === functionArn) {
+          continue;
+        }
+
+        // Update existing integration target if handler changed
+        if (integId) {
+          await awsRetry(() =>
+            this.client.send(
+              new UpdateIntegrationCommand({
+                ApiId: apiId,
+                IntegrationId: integId,
+                IntegrationUri: functionArn,
+              })
+            )
+          );
+          continue;
+        }
+      }
 
       const functionName = functionArn.split(":").pop()!;
 
