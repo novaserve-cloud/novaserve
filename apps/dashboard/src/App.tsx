@@ -38,7 +38,6 @@ import {
   EyeOff,
   ShieldCheck,
   Save,
-  User,
   Copy,
   LogIn
 } from 'lucide-react';
@@ -78,7 +77,6 @@ export default function App() {
   const [environment, setEnvironment] = useState<'local' | 'staging' | 'production'>('local');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [deployModalOpen, setDeployModalOpen] = useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [userToast, setUserToast] = useState<string | null>(null);
 
@@ -508,77 +506,6 @@ export default function App() {
               )}
             </button>
 
-            {/* Profile Avatar & Interactive Dropdown Menu */}
-            <div className="relative ml-1">
-              <button
-                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                className="w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center text-xs font-semibold tracking-wide border border-gray-800 hover:ring-2 hover:ring-amber-400 transition-all focus:outline-none"
-                title="Md Shadab Azam Ansari (SA)"
-              >
-                SA
-              </button>
-
-              {/* Profile Dropdown Menu */}
-              {profileMenuOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-20"
-                    onClick={() => setProfileMenuOpen(false)}
-                  />
-                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl border border-gray-200 shadow-xl z-30 py-2 animate-in fade-in zoom-in-95 duration-100 text-xs">
-                    {/* User Info Header */}
-                    <div className="px-4 py-2.5 border-b border-gray-100">
-                      <div className="font-semibold text-gray-800 text-sm">Md Shadab Azam Ansari</div>
-                      <div className="text-gray-500 font-mono text-[11px] truncate">shadab@novaserve.dev</div>
-                      <div className="mt-1.5 flex items-center gap-1.5">
-                        <span className="px-1.5 py-0.2 text-[9px] font-bold uppercase rounded bg-amber-100 text-amber-900 border border-amber-200">
-                          Owner
-                        </span>
-                        <span className="px-1.5 py-0.2 text-[9px] font-mono rounded bg-gray-100 text-gray-600">
-                          NovaServe Admin
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Navigation Items */}
-                    <div className="py-1">
-                      <button
-                        onClick={() => {
-                          setProfileMenuOpen(false);
-                          setProfileModalOpen(true);
-                        }}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 text-gray-700 font-medium"
-                      >
-                        <User className="w-3.5 h-3.5 text-gray-500" />
-                        <span>Account & Personal Tokens</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setProfileMenuOpen(false);
-                          setActiveTab('credentials');
-                        }}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 text-gray-700 font-medium"
-                      >
-                        <Key className="w-3.5 h-3.5 text-amber-600" />
-                        <span>Cloud Credentials & Vault</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setProfileMenuOpen(false);
-                          setActiveTab('config');
-                        }}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2.5 text-gray-700 font-medium"
-                      >
-                        <Settings className="w-3.5 h-3.5 text-gray-500" />
-                        <span>Framework Settings</span>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
           </div>
         </header>
 
