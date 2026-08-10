@@ -39,7 +39,6 @@ import {
   ShieldCheck,
   Save,
   User,
-  LogOut,
   Copy,
   LogIn
 } from 'lucide-react';
@@ -82,13 +81,6 @@ export default function App() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [userToast, setUserToast] = useState<string | null>(null);
-
-  const handleSignOut = () => {
-    setProfileMenuOpen(false);
-    setIsAuthenticated(true);
-    setUserToast('Session reset. Direct access maintained to dashboard.');
-    setTimeout(() => setUserToast(null), 3500);
-  };
 
   const handleSignIn = () => {
     setIsAuthenticated(true);
@@ -583,17 +575,6 @@ export default function App() {
                         <span>Framework Settings</span>
                       </button>
                     </div>
-
-                    <div className="border-t border-gray-100 py-1">
-                      <button
-                        onClick={handleSignOut}
-                        className="w-full px-4 py-2 text-left hover:bg-red-50 text-red-600 flex items-center gap-2.5 font-medium"
-                      >
-                        <LogOut className="w-3.5 h-3.5 text-red-500" />
-                        <span>Sign Out / Log Out</span>
-                      </button>
-                    </div>
-
                   </div>
                 </>
               )}
