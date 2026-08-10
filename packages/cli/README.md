@@ -4,15 +4,16 @@
 
 <h1 align="center">NovaServe</h1>
 
+<h3 align="center">The TypeScript-Native Infrastructure Platform</h3>
+
 <p align="center">
-  <strong>The TypeScript-native Serverless & Infrastructure Platform</strong>
+  <strong>Define. Compile. Plan. Deploy.</strong>
 </p>
 
 <p align="center">
-  Define infrastructure in TypeScript.<br />
-  Compile it into cloud resources.<br />
-  Plan changes.<br />
-  Deploy with confidence.
+  Build and manage cloud infrastructure with TypeScript —<br />
+  from application definition to provider-specific deployment,<br />
+  through a compiler-driven, provider-independent architecture.
 </p>
 
 <p align="center">
