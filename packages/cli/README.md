@@ -1,15 +1,18 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/sazamansari/NovaServe-/main/docs/assets/icon.svg" width="72" alt="NovaServe">
+  <img src="https://raw.githubusercontent.com/sazamansari/NovaServe-/main/docs/assets/icon.svg" width="72" alt="NovaServe Logo" />
 </p>
 
 <h1 align="center">NovaServe</h1>
 
 <p align="center">
-  The TypeScript-native Serverless & Infrastructure Platform
+  <strong>The TypeScript-native Serverless & Infrastructure Platform</strong>
 </p>
 
 <p align="center">
-  Define infrastructure in TypeScript. Compile it into cloud resources. Deploy with confidence.
+  Define infrastructure in TypeScript.<br />
+  Compile it into cloud resources.<br />
+  Plan changes.<br />
+  Deploy with confidence.
 </p>
 
 <p align="center">
@@ -24,36 +27,102 @@
 ---
 
 ```text
-ONE SDK  ──►  ONE COMPILER  ──►  ONE IR  ──►  ONE PLANNER  ──►  MULTIPLE CLOUD PROVIDERS
+ONE SDK  ──►  ONE COMPILER  ──►  ONE IR  ──►  ONE PLANNER  ──►  MULTIPLE PROVIDERS
 ```
 
 ---
 
-## Overview
+## 1. What is NovaServe?
 
-**NovaServe** is a TypeScript-native application compiler and deployment platform for modern cloud infrastructure. Designed to replace complex YAML configurations and imperative scripts with type-safe code, NovaServe enables developers to declare application resources and cloud dependencies in pure TypeScript.
+**NovaServe** is a TypeScript-native Infrastructure-as-Code (IaC) and serverless development platform built around a compiler-driven deployment architecture. It enables engineers to declare cloud resources—such as HTTP API gateways, serverless compute functions, relational databases, message queues, object storage, and cron workers—directly in TypeScript instead of writing verbose, provider-specific configuration manifests.
 
-Instead of writing static cloud manifests, NovaServe compiles your application code into a canonical, versioned **Nova Intermediate Representation (Nova IR 1.0.0)**. It computes deterministic DAG topologies, generates least-privilege IAM policies, calculates cost estimates, and executes differential cloud deployments to **AWS**, **Azure**, **GCP**, **Cloudflare**, **Docker**, or your **Local Machine**.
+At the core of NovaServe is a multi-stage compilation pipeline. The application specification is evaluated by the **Nova Compiler**, which performs dependency graph resolution, cycle detection, and type checking before emitting a canonical **Nova Intermediate Representation (Nova IR 1.0.0)**. The intermediate graph is processed by a deterministic planning engine to compute fine-grained execution diffs, least-privilege IAM policies, and cost projections before invoking pluggable provider adapters.
 
----
-
-## Core Capabilities
-
-- **Zero YAML Configuration**: Define APIs, databases, queues, object storage, and cron workers directly in TypeScript with full autocomplete and compile-time type safety.
-- **Deterministic Nova IR (1.0.0)**: Emits canonical, versioned intermediate representation with cryptographic SHA256 integrity verification.
-- **Least-Privilege IAM Engine**: Automatically derives exact, resource-scoped IAM roles and policy statements (`s3:PutObject`, `sqs:SendMessage`).
-- **Diff-Driven Planner**: Inspect infrastructure changes and estimated monthly cost impact prior to applying (`nova plan`).
-- **Drift Engine & Remediation**: Automatically detects live cloud configuration drift vs declared state with safe resolution (`nova drift --fix`).
-- **Multi-Cloud Target Adapters**: Deploy to AWS (Lambda/S3/SQS), Cloudflare Workers, Docker containers, or run locally with the built-in Hono emulator.
-- **OpenTelemetry Telemetry & AI Copilot**: Native span tracing waterfall viewer (`nova trace`) and AI-powered terminal diagnostic engine (`nova ai`).
+Designed for modern software development teams, NovaServe decouples high-level application intent from low-level cloud provider primitives. This abstraction allows applications to run locally on an in-process emulator or deploy seamlessly to **AWS**, **Cloudflare**, **Azure**, **GCP**, or **Docker** without modifying application handler code.
 
 ---
 
-## Quick Start
+## 2. Why NovaServe?
 
-### 1. Install CLI
+Managing cloud infrastructure using traditional tools often introduces friction, configuration duplication, and environment discrepancies:
 
-Install the NovaServe CLI globally via `npm` or `pnpm`:
+- **Configuration Complexity**: Managing raw YAML manifests, CloudFormation, or complex IaC templates leads to syntax errors that are only caught late in deployment.
+- **Runtime-Infrastructure Disconnect**: Handler code and infrastructure declarations live in separate ecosystems, leading to manually specified IAM permissions and out-of-sync environment variables.
+- **Provider Lock-In**: Porting applications between cloud environments or running faithful offline emulators requires rewriting deployment scripts.
+
+NovaServe solves these challenges by integrating infrastructure declaration directly into the TypeScript type system.
+
+### Comparison Paradigm
+
+```text
+TRADITIONAL INFRASTRUCTURE:
+Application Code + Infrastructure Manifests + Provider Templates + External CLI Tools
+
+NOVASERVE ARCHITECTURE:
+TypeScript Application
+      ↓
+NovaServe SDK
+      ↓
+Nova Compiler
+      ↓
+Nova Intermediate Representation (IR)
+      ↓
+Deterministic Planner & Cost Estimator
+      ↓
+Target Provider Adapter (AWS / Local / Cloudflare / Docker)
+      ↓
+Cloud Resources
+```
+
+---
+
+## 3. Architecture
+
+NovaServe implements a strict, unidirectional compilation pipeline where application intent is incrementally validated, compiled, planned, and deployed.
+
+```mermaid
+flowchart TD
+    A[TypeScript Application Spec] --> B[NovaServe SDK]
+    B --> C[Nova Compiler & DAG Engine]
+    C --> D[Nova Intermediate Representation IR 1.0.0]
+    D --> E[Diff Planner & Cost Engine]
+    E --> F[Journaled Deployment Engine]
+    F --> G[Provider Adapters]
+    G --> H[AWS / Cloudflare / Azure / GCP / Docker / Local]
+```
+
+### Compilation Pipeline Stages
+
+1. **SDK Layer (`novaserve-sdk`)**: Provides type-safe resource builders (`api`, `storage`, `queue`, `database`, `cron`, `secret`).
+2. **Compiler & DAG Engine (`novaserve-core`)**: Evaluates `nova.config.ts`, resolves resource dependency graphs, checks for cyclic references, and enforces schema capabilities.
+3. **Nova IR (1.0.0)**: Emits a provider-neutral, JSON-serialized graph with a canonical SHA-256 digest to ensure deployment idempotency.
+4. **Planner & Cost Engine**: Compares the generated Nova IR against existing infrastructure state to compute resource diffs (Create, Update, Replace, Delete) and estimated monthly costs.
+5. **Journaled Deployment Engine**: Executes atomic, step-by-step state transitions recorded in an append-only journal, supporting deterministic rollbacks and state locking.
+6. **Provider Adapters (`novaserve-provider-*`)**: Translates Nova IR operations into target provider API calls.
+
+---
+
+## 4. Core Concepts
+
+### Declarative SDK & Resource Graph
+Resources are defined using fluent builder methods. Type definitions automatically infer environment bindings and cross-resource links.
+
+### Nova IR (1.0.0) & Hashing
+The intermediate representation isolates application logic from cloud vendor APIs. Each compiled artifact produces a deterministic SHA-256 hash, enabling fast change detection and incremental deployments.
+
+### Least-Privilege IAM Policy Generation
+The compiler inspects cross-resource references (e.g., an API route accessing an S3 bucket) and automatically generates exact, minimal IAM policy statements (`s3:PutObject` scoped exclusively to `arn:aws:s3:::bucket-name/*`).
+
+### Journaled State & Process Locking
+Deployments write to a journal file (`.nova/journal.json`) with process-level locking to prevent concurrent state corruption across CI/CD pipelines.
+
+---
+
+## 5. Quick Start
+
+### 1. Installation
+
+Install the NovaServe CLI globally:
 
 ```bash
 npm install -g novaserve
@@ -61,34 +130,33 @@ npm install -g novaserve
 pnpm add -g novaserve
 ```
 
-### 2. Create Application
+### 2. Initialize Project
 
-Scaffold a new NovaServe project using an official template:
+Create a new application from an official template:
 
 ```bash
 nova init my-app --template basic-api
 cd my-app
 ```
 
-### 3. Develop & Deploy
+### 3. Development & Deployment Workflow
 
 ```bash
-# Start local development server with hot reload
+# Start local Hono emulator with hot reloading
 nova dev
 
-# Open local visual control dashboard
-nova dashboard
-
-# Generate deployment diff & cost plan
+# Inspect infrastructure graph & plan changes
 nova plan
 
-# Deploy infrastructure to cloud provider
+# Deploy infrastructure to target environment
 nova deploy
 ```
 
 ---
 
-## Declarative Infrastructure (`nova.config.ts`)
+## 6. Real Example
+
+`nova.config.ts`:
 
 ```typescript
 import { defineApp, api, storage, queue, database, cron, secret } from "novaserve";
@@ -99,22 +167,25 @@ export default defineApp({
   runtime: "node20",
 
   resources: {
-    // HTTP API Gateway & Handler Routing
+    // HTTP API Gateway
     api: api.create({
       routes: {
         "GET /health": "src/handlers/health.get",
         "GET /users": "src/handlers/users.list",
         "POST /users": "src/handlers/users.create",
+        "GET /users/:id": "src/handlers/users.getById",
       },
-      cors: true,
+      cors: {
+        origins: ["https://app.novaserve.dev"],
+      },
     }),
 
-    // S3 / R2 Object Storage Bucket
+    // S3 Object Storage Bucket
     uploads: storage.bucket("user-uploads", {
       maxSize: "10mb",
     }),
 
-    // Background Asynchronous Message Queue
+    // Background Job Queue
     emailQueue: queue.create("email-notifications", {
       handler: "src/handlers/email.process",
       retries: 3,
@@ -125,9 +196,9 @@ export default defineApp({
       version: "15",
     }),
 
-    // Scheduled Cron Job
-    dailyReport: cron.schedule("0 0 * * *", {
-      handler: "src/handlers/reports.generate",
+    // Cron Scheduled Task
+    cleanupTask: cron.schedule("0 0 * * *", {
+      handler: "src/handlers/cleanup.run",
     }),
 
     // KMS Encrypted Environment Secret
@@ -138,103 +209,166 @@ export default defineApp({
 
 ---
 
-## Architecture Flow
+## 7. Command Line Interface (CLI)
+
+Usage: `nova [command] [options]`
+
+| Command | Subcommands / Options | Description |
+|---|---|---|
+| `nova init [name]` | `--template <template>` | Scaffolds a new NovaServe project |
+| `nova dev` | `-p, --port <port>` | Launches local Hono emulator server |
+| `nova build` | `-e, --env <environment>` | Bundles function handlers using esbuild |
+| `nova plan` | `--save <file>` | Generates execution diff & cost estimation |
+| `nova deploy` | `--provider <provider>` | Deploys compiled IR graph to cloud target |
+| `nova destroy` | `--force` | Safely tears down deployed resources |
+| `nova diff` | — | Compares local Nova IR against deployed state |
+| `nova drift` | `--fix` | Detects live cloud configuration drift & offers remediation |
+| `nova security` | — | Audits IAM policy scope and exposed ports |
+| `nova cost` | — | Displays monthly resource cost breakdown |
+| `nova graph` | — | Renders dependency DAG topology in terminal |
+| `nova ir` | `validate`, `hash` | Inspects & hashes Nova IR 1.0.0 JSON |
+| `nova logs` | `[function] -f` | Streams real-time function log output |
+| `nova trace` | `[trace-id]` | Displays OpenTelemetry execution span waterfall |
+| `nova state` | `verify`, `lock` | Manages state lock files & journal entries |
+| `nova rollback` | `[deployment-id]` | Rolls back infrastructure to a previous journal state |
+| `nova promote` | `<src> <target>` | Promotes compiled IR topology across environments |
+| `nova doctor` | — | Verifies Node, CLI, and provider credential health |
+| `nova dashboard` | `-p, --port <port>` | Launches local visual control web dashboard |
+| `nova ai` | `diagnose` | Terminal AI assistant for error diagnosis |
+
+---
+
+## 8. Provider Support Matrix
+
+NovaServe uses a target adapter model to abstract cloud operations:
+
+| Provider | Status | Supported Primitives |
+|---|:---:|---|
+| **Local Emulator** | Production | HTTP API (Hono), In-memory SQS, Local Storage, Process Runner |
+| **AWS Provider** | Production | API Gateway v2, Lambda, S3, SQS, RDS PostgreSQL, EventBridge Cron |
+| **Cloudflare Provider** | Experimental | Cloudflare Workers, R2 Buckets, D1 Database, KV Namespaces |
+| **Docker Provider** | Experimental | Docker Compose containerization for local/on-prem deployment |
+| **Azure Provider** | Planned | Azure Functions, Blob Storage, Azure SQL |
+| **GCP Provider** | Planned | Google Cloud Functions, Cloud Storage, Cloud Pub/Sub |
+
+---
+
+## 9. Infrastructure Lifecycle
 
 ```text
-┌─────────────────────────┐
-│   TypeScript App Spec   │  (nova.config.ts)
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│   Nova Application DAG  │  (Cycle & Capability Validation)
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│     Nova IR (1.0.0)     │  (Canonical SHA256 Hash Integrity)
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│   Diff & Cost Planner   │  (Resource Change Set & Cost Estimation)
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│   Journaled Deployer    │  (Idempotent Locks & Rollback Engine)
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│   Multi-Cloud Targets   │  (AWS, Azure, GCP, Cloudflare, Docker, Local)
-└────────────┴────────────┘
+  1. INIT ────────► 2. DEV ────────► 3. COMPILE ────────► 4. PLAN
+  Scaffold Project   Local Emulator   Typecheck & DAG      Diff & Cost Impact
+                                                                  │
+  8. DESTROY ◄───── 7. TRACE ◄────── 6. DEPLOY ◄───────── 5. APPLY
+  Teardown State     OpenTelemetry    Journaled Execution   Confirm & Execute
 ```
 
 ---
 
-## CLI Reference
+## 10. Monorepo Project Structure
 
-Usage: `nova [command] [options]`
+NovaServe is maintained as a clean, modular TypeScript monorepo:
 
-| Command | Options | Description |
-|---|---|---|
-| `nova init [name]` | `--template <template>` | Scaffolds a new NovaServe project |
-| `nova dev` | `-p, --port <port>` | Launches local Hono emulator with hot reload |
-| `nova build` | `-e, --env <env>` | Bundles serverless handlers using esbuild |
-| `nova plan` | `--save <file>` | Computes diff-driven deployment plan & cost estimation |
-| `nova deploy` | `--provider <provider>` | Executes journaled deployment to cloud provider |
-| `nova destroy` | `--force` | Removes all deployed cloud infrastructure |
-| `nova drift` | `--fix` | Audits live infrastructure drift & applies remediation |
-| `nova security` | — | Audits IAM policy statements and resource exposure |
-| `nova dashboard` | `-p, --port <port>` | Opens visual control web interface |
-| `nova ai` | `diagnose` | Interactive AI agent terminal diagnostic assistant |
-| `nova trace` | `[trace-id]` | Displays OpenTelemetry execution waterfall |
-| `nova ir` | `validate`, `hash` | Inspects & hashes Nova Intermediate Representation |
-| `nova doctor` | — | Checks system environment & cloud credential health |
-
----
-
-## SDK API Reference
-
-| Builder Method | Import | Description |
-|---|---|---|
-| `defineApp(config)` | `import { defineApp } from "novaserve"` | Root application entrypoint configuration |
-| `api.create(options)` | `import { api } from "novaserve"` | High-performance HTTP API Gateway |
-| `fn.create(options)` | `import { fn } from "novaserve"` | Standalone serverless compute function |
-| `storage.bucket(name)` | `import { storage } from "novaserve"` | Object storage bucket (AWS S3 / Cloudflare R2) |
-| `database.postgres(name)` | `import { database } from "novaserve"` | Managed relational PostgreSQL instance |
-| `queue.create(name)` | `import { queue } from "novaserve"` | Asynchronous message queue worker (SQS) |
-| `cron.schedule(cronExpr)` | `import { cron } from "novaserve"` | Scheduled cron job trigger |
-| `cache.redis(name)` | `import { cache } from "novaserve"` | Managed ElastiCache / Upstash Redis |
-| `secret.define(name)` | `import { secret } from "novaserve"` | KMS-encrypted environment secret manager |
+```text
+novaserve/
+├── packages/
+│   ├── cli/           # Global 'nova' CLI command suite
+│   ├── core/          # Compiler engine, DAG solver, IR validator, & journal
+│   ├── sdk/           # Developer API ('defineApp', 'api', 'storage', 'queue')
+│   ├── runtime/       # Universal handler wrapper & OpenTelemetry context tracer
+│   ├── auth/          # Authentication & security utility primitives
+│   └── providers/     # Target cloud provider adapters
+│       ├── aws/       # AWS Cloud SDK deployment provider
+│       ├── local/     # In-process Hono development emulator
+│       ├── cloudflare/# Cloudflare Workers & R2 adapter
+│       ├── docker/    # Docker container builder adapter
+│       ├── azure/     # Azure Functions adapter
+│       └── gcp/       # Google Cloud Functions adapter
+└── apps/
+    └── dashboard/     # Local visual control dashboard UI (Vite + React)
+```
 
 ---
 
-## Platform Comparison
+## 11. Platform Comparison
 
-| Capability | NovaServe | Serverless Framework | SST (v3) | Terraform / Pulumi |
+| Architectural Metric | NovaServe | Serverless Framework | SST (v3) | Terraform / Pulumi |
 |---|:---:|:---:|:---:|:---:|
-| **Language Paradigm** | **TypeScript** | YAML | TypeScript | HCL / Code |
-| **Type Safety** | **Full 100%** | None | Partial | Partial |
-| **Local Emulator** | **Instant (Hono)** | Plugin-dependent | Local Dev | No Local |
-| **IAM Policy Gen** | **Auto Least-Privilege** | Manual | Partial | Manual |
-| **Visual Console** | **Built-in (`nova dashboard`)** | Cloud Service | SST Console | Separate Tooling |
-| **Drift Remediation** | **`nova drift --fix`** | No | No | State Refresh Only |
-| **Multi-Cloud Adapters** | **AWS / GCP / Azure / CF / Docker** | Multi-Cloud | AWS / Cloudflare | Multi-Cloud |
+| **Infrastructure Paradigm** | **Compiler (IR-based)** | Macro/Template Generator | Pulumi/Ion Wrapper | Engine & State Evaluator |
+| **Type Safety** | **100% Native TypeScript** | None (YAML) | TypeScript | HCL / Multi-Language |
+| **IAM Generation** | **Automatic Least-Privilege** | Manual | Partial | Manual |
+| **Local Execution** | **In-Process Hono Server** | Plugin Dependent | Local Tunnel / Live Lambda | Non-existent |
+| **Drift Remediation** | **Built-in (`nova drift --fix`)** | No | No | State Refresh Only |
+| **Cloud Independence** | **High (Neutral Nova IR)** | Medium | Low (AWS-centric) | High |
 
 ---
 
-## Maintainer & Community
+## 12. Primary Use Cases
 
-Designed and created by **[Md Shadab Azam Ansari](https://md-shadab-azam-ansari.vercel.app/)**.
+- **Serverless REST & Event APIs**: Deploy light, low-latency microservices with automatic HTTP routing and bundled TypeScript handlers.
+- **Asynchronous Event Processing**: Chain SQS queues, background workers, and S3 object storage with auto-scoped IAM roles.
+- **Multi-Environment Delivery**: Promote verified Nova IR configurations deterministically from `staging` to `production`.
+- **Offline & Edge Development**: Run full application stacks locally without internet connectivity or AWS accounts using `nova dev`.
 
-- **Portfolio**: [https://md-shadab-azam-ansari.vercel.app/](https://md-shadab-azam-ansari.vercel.app/)
-- **GitHub**: [@sazamansari](https://github.com/sazamansari)
+---
+
+## 13. Design Principles
+
+1. **Type Safety First**: Infrastructure and runtime code share the same type system, catching missing variables or invalid references at compile-time.
+2. **Compiler Determinism**: The Nova Compiler produces reproducible IR graphs with SHA-256 integrity hashes to eliminate unexpected side effects.
+3. **Provider Decoupling**: High-level primitives (`storage.bucket`) remain independent of vendor implementation details (`AWS::S3::Bucket`).
+4. **Declarative Security**: Least-privilege IAM policies and encrypted secret bindings are generated by default without manual policy writing.
+
+---
+
+## 14. Roadmap
+
+- [x] **Nova IR 1.0.0 Specification**: Versioned, canonical JSON IR schema and validation engine.
+- [x] **AWS & Local Emulation Engine**: Production support for AWS Lambda, S3, SQS, API Gateway, and Hono local dev.
+- [x] **Least-Privilege IAM Generator**: Automatic derivation of scoped IAM policy statements.
+- [x] **Drift Engine & Remediation**: Detection and resolution of live infrastructure drift (`nova drift`).
+- [ ] **Cloudflare & Edge Provider Maturation**: Full production readiness for Cloudflare Workers, R2, and D1.
+- [ ] **Kubernetes Custom Resource Definition (CRD)**: Direct Nova IR operator for native Kubernetes clusters.
+
+---
+
+## 15. Contributing
+
+Contributions to NovaServe are welcome! To set up your local development environment:
+
+```bash
+# Clone repository
+git clone https://github.com/sazamansari/NovaServe-.git
+cd NovaServe-
+
+# Install dependencies
+pnpm install
+
+# Build all monorepo packages
+pnpm build
+
+# Run unit test suite
+pnpm test
+```
+
+---
+
+## 16. Security
+
+NovaServe is committed to secure infrastructure deployment practices. 
+
+If you discover a security vulnerability, please review our [SECURITY.md](SECURITY.md) guidelines or email security disclosures directly to `md.shadab.azam.ansari@gmail.com`.
+
+---
+
+## 17. License
+
+Licensed under the **MIT License** © Md Shadab Azam Ansari & NovaServe Contributors. See [LICENSE](LICENSE) for details.
+
+---
+
+## 18. Project Links
+
 - **NPM Package**: [https://www.npmjs.com/package/novaserve](https://www.npmjs.com/package/novaserve)
-
----
-
-## License
-
-MIT License © Md Shadab Azam Ansari & NovaServe Contributors.
+- **GitHub Repository**: [https://github.com/sazamansari/NovaServe-](https://github.com/sazamansari/NovaServe-)
+- **Author Portfolio**: [https://md-shadab-azam-ansari.vercel.app/](https://md-shadab-azam-ansari.vercel.app/)
