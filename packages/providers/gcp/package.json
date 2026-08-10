@@ -1,6 +1,6 @@
 {
   "name": "novaserve-provider-gcp",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "NovaServe GCP Provider — Deploy to Google Cloud Functions, Cloud Run",
   "type": "module",
   "main": "./dist/index.js",

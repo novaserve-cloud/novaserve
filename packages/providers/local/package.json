@@ -1,6 +1,6 @@
 {
   "name": "novaserve-provider-local",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "NovaServe Local Provider — In-process dev server with hot reload",
   "type": "module",
   "main": "./dist/index.js",
