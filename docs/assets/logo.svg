@@ -10,8 +10,8 @@
     }
   </style>
 
-  <!-- Yellow Diamond ◆ -->
-  <polygon points="26,14 44,32 26,50 8,32" fill="#ffb800" />
+  <!-- Dark Red Diamond ◆ -->
+  <polygon points="26,14 44,32 26,50 8,32" fill="#dc2626" />
 
   <!-- NovaServe Typography -->
   <text x="58" y="42" class="brand-text">NovaServe</text>
