@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/sazamansari/NovaServe-/main/docs/assets/banner.png" alt="NovaServe Logo" width="160" style="border-radius: 12px;" />
+  <img src="https://raw.githubusercontent.com/sazamansari/NovaServe-/main/docs/assets/logo.svg" alt="NovaServe Banner Logo" width="680" style="border-radius: 12px;" />
   <h1 align="center">◆ NovaServe</h1>
   <p align="center">
     <strong>The Next-Generation TypeScript-First Serverless & Cloud Infrastructure Framework</strong>
