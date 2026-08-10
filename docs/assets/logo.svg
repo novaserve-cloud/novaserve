@@ -2,64 +2,65 @@
   <defs>
     <!-- Background Gradient -->
     <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0b0f19" />
-      <stop offset="50%" stop-color="#111827" />
-      <stop offset="100%" stop-color="#070a12" />
+      <stop offset="0%" stop-color="#0a0b10" />
+      <stop offset="50%" stop-color="#141722" />
+      <stop offset="100%" stop-color="#08090d" />
     </linearGradient>
 
-    <!-- Star Glow -->
+    <!-- Golden Star Glow -->
     <radialGradient id="novaGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.8" />
-      <stop offset="50%" stop-color="#6366f1" stop-opacity="0.3" />
-      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0" />
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.75" />
+      <stop offset="50%" stop-color="#eab308" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#fef08a" stop-opacity="0" />
     </radialGradient>
 
-    <!-- Core Icon Gradient -->
+    <!-- Core Icon Yellow/Gold Gradient -->
     <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#a855f7" />
-      <stop offset="50%" stop-color="#6366f1" />
-      <stop offset="100%" stop-color="#3b82f6" />
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="40%" stop-color="#facc15" />
+      <stop offset="100%" stop-color="#d97706" />
     </linearGradient>
 
-    <!-- Text Gradient -->
-    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+    <!-- White Text Gradient -->
+    <linearGradient id="whiteTextGradient" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#ffffff" />
-      <stop offset="100%" stop-color="#cbd5e1" />
+      <stop offset="100%" stop-color="#f8fafc" />
     </linearGradient>
 
-    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#c084fc" />
-      <stop offset="100%" stop-color="#60a5fa" />
+    <!-- Yellow Accent Gradient -->
+    <linearGradient id="yellowAccentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fde047" />
+      <stop offset="100%" stop-color="#eab308" />
     </linearGradient>
 
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#8b5cf6" flood-opacity="0.4"/>
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#eab308" flood-opacity="0.45"/>
     </filter>
   </defs>
 
   <!-- Container Box -->
-  <rect width="800" height="240" rx="20" fill="url(#bgGradient)" stroke="#1e293b" stroke-width="2"/>
+  <rect width="800" height="240" rx="20" fill="url(#bgGradient)" stroke="#27272a" stroke-width="2"/>
 
-  <!-- Subtle Glow Effect -->
-  <circle cx="140" cy="120" r="90" fill="url(#novaGlow)" />
+  <!-- Golden Radial Glow -->
+  <circle cx="140" cy="120" r="95" fill="url(#novaGlow)" />
 
-  <!-- Diamond / Nova Emblem -->
+  <!-- Diamond / Nova Star Emblem in Gold & White -->
   <g transform="translate(140, 120)" filter="url(#shadow)">
     <!-- Outer Rotated Diamond -->
     <path d="M 0 -55 L 45 0 L 0 55 L -45 0 Z" fill="url(#iconGradient)" />
     <!-- Inner Star Cutout -->
-    <path d="M 0 -35 Q 0 0 35 0 Q 0 0 0 35 Q 0 0 -35 0 Q 0 0 0 -35 Z" fill="#0b0f19" />
-    <!-- Center Core Dot -->
-    <circle cx="0" cy="0" r="8" fill="url(#accentGradient)" />
+    <path d="M 0 -35 Q 0 0 35 0 Q 0 0 0 35 Q 0 0 -35 0 Q 0 0 0 -35 Z" fill="#0a0b10" />
+    <!-- Center Core White Spark Star -->
+    <circle cx="0" cy="0" r="9" fill="#ffffff" />
   </g>
 
-  <!-- Typography -->
-  <text x="240" y="128" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="54" letter-spacing="-1.5" fill="url(#textGradient)">
-    Nova<tspan fill="url(#accentGradient)">Serve</tspan>
+  <!-- Typography: White Nova + Yellow Serve -->
+  <text x="240" y="128" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="54" letter-spacing="-1.5" fill="url(#whiteTextGradient)">
+    Nova<tspan fill="url(#yellowAccentGradient)">Serve</tspan>
   </text>
 
-  <!-- Tagline -->
-  <text x="242" y="162" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="500" font-size="16" letter-spacing="1.5" fill="#94a3b8">
+  <!-- Subtitle / Tagline in Pale Warm Gold -->
+  <text x="242" y="162" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="600" font-size="16" letter-spacing="1.5" fill="#fef08a">
     NEXT-GEN SERVERLESS FRAMEWORK
   </text>
 </svg>
