@@ -1,40 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 120" width="100%" height="100%">
   <defs>
-    <!-- Yellow/Gold Gradient for Diamond Icon and 'Serve' Text -->
-    <linearGradient id="yellowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Yellow / Gold Gradient -->
+    <linearGradient id="yellowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#fef08a" />
       <stop offset="50%" stop-color="#facc15" />
       <stop offset="100%" stop-color="#eab308" />
     </linearGradient>
 
-    <!-- Crisp White Gradient for 'Nova' Text -->
-    <linearGradient id="whiteGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+    <!-- White Gradient -->
+    <linearGradient id="whiteGrad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#ffffff" />
       <stop offset="100%" stop-color="#f8fafc" />
     </linearGradient>
 
-    <!-- Subtle Drop Shadow for contrast on both dark and light backgrounds -->
-    <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.35"/>
+    <!-- Subtle Drop Shadow -->
+    <filter id="logoShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.4"/>
     </filter>
   </defs>
 
-  <!-- Transparent Background: No background rect -->
-
-  <g filter="url(#subtleShadow)">
-    <!-- Iconic Diamond ◆ Emblem -->
-    <g transform="translate(60, 60)">
-      <!-- Outer Rotated Diamond -->
-      <path d="M 0 -36 L 30 0 L 0 36 L -30 0 Z" fill="url(#yellowGradient)" />
-      <!-- Inner Four-Point Star Cutout -->
-      <path d="M 0 -22 Q 0 0 22 0 Q 0 0 0 22 Q 0 0 -22 0 Q 0 0 0 -22 Z" fill="#0f172a" />
-      <!-- Center Spark Dot -->
+  <g filter="url(#logoShadow)">
+    <!-- Iconic Diamond ◆ Emblem (100% Transparent Cutout via evenodd fill rule) -->
+    <g transform="translate(55, 60)">
+      <path fill-rule="evenodd" d="M 0 -36 L 30 0 L 0 36 L -30 0 Z M 0 -22 Q 0 0 22 0 Q 0 0 0 22 Q 0 0 -22 0 Q 0 0 0 -22 Z" fill="url(#yellowGrad)" />
       <circle cx="0" cy="0" r="5" fill="#ffffff" />
     </g>
 
-    <!-- Typography: Nova (White) Serve (Yellow) -->
-    <text x="115" y="76" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="52" letter-spacing="-1.5" fill="url(#whiteGradient)">
-      Nova<tspan fill="url(#yellowGradient)">Serve</tspan>
+    <!-- Clean Typography: White Nova + Yellow Serve -->
+    <text x="108" y="77" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="52" letter-spacing="-1.5" fill="url(#whiteGrad)">
+      Nova<tspan fill="url(#yellowGrad)">Serve</tspan>
     </text>
   </g>
 </svg>
