@@ -1,22 +1,20 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/sazamansari/NovaServe-/main/docs/assets/icon.svg" alt="NovaServe Logo" width="140"/>
+  <img src="https://raw.githubusercontent.com/sazamansari/NovaServe-/main/docs/assets/icon.svg" width="72" alt="NovaServe">
 </p>
 
 <h1 align="center">NovaServe</h1>
 
 <p align="center">
-  <strong>The TypeScript-native Serverless & Infrastructure Platform</strong>
+  The TypeScript-native Serverless & Infrastructure Platform
 </p>
 
 <p align="center">
-  Define infrastructure in TypeScript.<br />
-  Compile it into cloud resources.<br />
-  Deploy with confidence.
+  Define infrastructure in TypeScript. Compile it into cloud resources. Deploy with confidence.
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/novaserve"><img src="https://img.shields.io/npm/v/novaserve.svg?style=flat-square&color=38bdf8" alt="npm version" /></a>
-  <a href="https://www.npmjs.com/package/novaserve"><img src="https://img.shields.io/npm/dm/novaserve.svg?style=flat-square&color=818cf8" alt="npm downloads" /></a>
+  <a href="https://www.npmjs.com/package/novaserve"><img src="https://img.shields.io/npm/v/novaserve.svg?style=flat-square&color=6366f1" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/novaserve"><img src="https://img.shields.io/npm/dm/novaserve.svg?style=flat-square&color=38bdf8" alt="npm downloads" /></a>
   <a href="https://github.com/sazamansari/NovaServe-/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="license" /></a>
   <a href="https://typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-5.7+-3178c6.svg?style=flat-square" alt="TypeScript" /></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg?style=flat-square" alt="node version" /></a>
@@ -170,7 +168,7 @@ export default defineApp({
              ▼
 ┌─────────────────────────┐
 │   Multi-Cloud Targets   │  (AWS, Azure, GCP, Cloudflare, Docker, Local)
-└─────────────────────────┘
+└────────────┴────────────┘
 ```
 
 ---
