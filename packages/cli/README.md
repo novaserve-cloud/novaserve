@@ -1,6 +1,8 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/sazamansari/NovaServe-/main/docs/assets/logo.svg" height="48" alt="NovaServe" />
+  <img src="https://raw.githubusercontent.com/sazamansari/NovaServe-/main/docs/assets/logo.svg" height="80" alt="NovaServe" />
 </p>
+
+<h1 align="center">NovaServe</h1>
 
 <h3 align="center">The TypeScript-Native Infrastructure Platform</h3>
 
