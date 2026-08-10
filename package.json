@@ -1,6 +1,6 @@
 {
   "name": "novaserve",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "private": true,
   "description": "The future of serverless development — as simple as Vercel, as powerful as Terraform, as fast as Bun",
   "author": "NovaServe Contributors",

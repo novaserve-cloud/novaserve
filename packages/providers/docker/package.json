@@ -1,6 +1,6 @@
 {
   "name": "novaserve-provider-docker",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "description": "NovaServe Docker Provider — Containerize and deploy via Docker",
   "type": "module",
   "main": "./dist/index.js",
