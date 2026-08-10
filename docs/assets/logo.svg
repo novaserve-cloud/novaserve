@@ -1,21 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 64" width="100%" height="100%">
+  <defs>
+    <linearGradient id="nova-diamond-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2.5" flood-color="#f59e0b" flood-opacity="0.35" />
+    </filter>
+  </defs>
   <style>
-    .brand-text { fill: #dc2626; font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif; font-weight: 800; font-size: 32px; letter-spacing: -0.6px; }
-    .badge-bg { fill: #f1f5f9; stroke: #e2e8f0; }
-    .badge-text { fill: #475569; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 500; font-size: 15px; }
+    .brand-text { fill: #dc2626; font-family: -apple-system, BlinkMacSystemFont, 'Geist', 'Inter', 'Segoe UI', Roboto, sans-serif; font-weight: 800; font-size: 32px; letter-spacing: -0.6px; }
+    .badge-bg { fill: #f1f5f9; stroke: #cbd5e1; }
+    .badge-text { fill: #475569; font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 600; font-size: 13px; }
     @media (prefers-color-scheme: dark) {
+      .brand-text { fill: #ef4444; }
       .badge-bg { fill: #1e293b; stroke: #334155; }
       .badge-text { fill: #94a3b8; }
     }
   </style>
 
-  <!-- Yellow Diamond ◆ -->
-  <polygon points="26,14 44,32 26,50 8,32" fill="#ffb800" />
+  <!-- Balanced Centered Composition -->
+  <!-- Yellow Diamond ◆ (Center X: 42, Y: 32) -->
+  <polygon points="42,14 60,32 42,50 24,32" fill="url(#nova-diamond-grad)" filter="url(#glow)" />
 
-  <!-- Entire NovaServe Typography in Dark Red -->
-  <text x="58" y="42" class="brand-text">NovaServe</text>
+  <!-- NovaServe Typography (X: 72, Y: 43) -->
+  <text x="72" y="43" class="brand-text">NovaServe</text>
 
-  <!-- Version Badge v2.1.4 -->
-  <rect x="232" y="16" width="76" height="32" rx="8" class="badge-bg" stroke-width="1.5" />
-  <text x="270" y="37" text-anchor="middle" class="badge-text">v2.1.4</text>
+  <!-- Version Badge v2.1.4 (X: 244, Y: 19, W: 72, H: 26) -->
+  <rect x="244" y="19" width="72" height="26" rx="6" class="badge-bg" stroke-width="1.2" />
+  <text x="280" y="36" text-anchor="middle" class="badge-text">v2.1.4</text>
 </svg>
