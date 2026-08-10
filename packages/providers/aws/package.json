@@ -35,7 +35,8 @@
     "vitest": "^3.0.0"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "license": "MIT",
   "author": {
