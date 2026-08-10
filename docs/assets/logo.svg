@@ -1,66 +1,40 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 240" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 120" width="100%" height="100%">
   <defs>
-    <!-- Background Gradient -->
-    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0a0b10" />
-      <stop offset="50%" stop-color="#141722" />
-      <stop offset="100%" stop-color="#08090d" />
-    </linearGradient>
-
-    <!-- Golden Star Glow -->
-    <radialGradient id="novaGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.75" />
-      <stop offset="50%" stop-color="#eab308" stop-opacity="0.25" />
-      <stop offset="100%" stop-color="#fef08a" stop-opacity="0" />
-    </radialGradient>
-
-    <!-- Core Icon Yellow/Gold Gradient -->
-    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Yellow/Gold Gradient for Diamond Icon and 'Serve' Text -->
+    <linearGradient id="yellowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#fef08a" />
-      <stop offset="40%" stop-color="#facc15" />
-      <stop offset="100%" stop-color="#d97706" />
+      <stop offset="50%" stop-color="#facc15" />
+      <stop offset="100%" stop-color="#eab308" />
     </linearGradient>
 
-    <!-- White Text Gradient -->
-    <linearGradient id="whiteTextGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+    <!-- Crisp White Gradient for 'Nova' Text -->
+    <linearGradient id="whiteGradient" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#ffffff" />
       <stop offset="100%" stop-color="#f8fafc" />
     </linearGradient>
 
-    <!-- Yellow Accent Gradient -->
-    <linearGradient id="yellowAccentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#fde047" />
-      <stop offset="100%" stop-color="#eab308" />
-    </linearGradient>
-
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#eab308" flood-opacity="0.45"/>
+    <!-- Subtle Drop Shadow for contrast on both dark and light backgrounds -->
+    <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000000" flood-opacity="0.35"/>
     </filter>
   </defs>
 
-  <!-- Container Box -->
-  <rect width="800" height="240" rx="20" fill="url(#bgGradient)" stroke="#27272a" stroke-width="2"/>
+  <!-- Transparent Background: No background rect -->
 
-  <!-- Golden Radial Glow -->
-  <circle cx="140" cy="120" r="95" fill="url(#novaGlow)" />
+  <g filter="url(#subtleShadow)">
+    <!-- Iconic Diamond ◆ Emblem -->
+    <g transform="translate(60, 60)">
+      <!-- Outer Rotated Diamond -->
+      <path d="M 0 -36 L 30 0 L 0 36 L -30 0 Z" fill="url(#yellowGradient)" />
+      <!-- Inner Four-Point Star Cutout -->
+      <path d="M 0 -22 Q 0 0 22 0 Q 0 0 0 22 Q 0 0 -22 0 Q 0 0 0 -22 Z" fill="#0f172a" />
+      <!-- Center Spark Dot -->
+      <circle cx="0" cy="0" r="5" fill="#ffffff" />
+    </g>
 
-  <!-- Diamond / Nova Star Emblem in Gold & White -->
-  <g transform="translate(140, 120)" filter="url(#shadow)">
-    <!-- Outer Rotated Diamond -->
-    <path d="M 0 -55 L 45 0 L 0 55 L -45 0 Z" fill="url(#iconGradient)" />
-    <!-- Inner Star Cutout -->
-    <path d="M 0 -35 Q 0 0 35 0 Q 0 0 0 35 Q 0 0 -35 0 Q 0 0 0 -35 Z" fill="#0a0b10" />
-    <!-- Center Core White Spark Star -->
-    <circle cx="0" cy="0" r="9" fill="#ffffff" />
+    <!-- Typography: Nova (White) Serve (Yellow) -->
+    <text x="115" y="76" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="52" letter-spacing="-1.5" fill="url(#whiteGradient)">
+      Nova<tspan fill="url(#yellowGradient)">Serve</tspan>
+    </text>
   </g>
-
-  <!-- Typography: White Nova + Yellow Serve -->
-  <text x="240" y="128" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="54" letter-spacing="-1.5" fill="url(#whiteTextGradient)">
-    Nova<tspan fill="url(#yellowAccentGradient)">Serve</tspan>
-  </text>
-
-  <!-- Subtitle / Tagline in Pale Warm Gold -->
-  <text x="242" y="162" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="600" font-size="16" letter-spacing="1.5" fill="#fef08a">
-    NEXT-GEN SERVERLESS FRAMEWORK
-  </text>
 </svg>
