@@ -221,7 +221,7 @@ export default function App() {
             <svg className="w-4 h-4 fill-amber-400 text-amber-400 shrink-0" viewBox="0 0 24 24">
               <path d="M12 2L22 12L12 22L2 12Z" />
             </svg>
-            <span className="font-bold text-base tracking-tight"><span className="text-red-600">Nova</span><span className="text-gray-900">Serve</span></span>
+            <span className="font-bold text-base text-red-600 tracking-tight">NovaServe</span>
             <span className="px-1.5 py-0.5 text-[10px] font-mono font-medium rounded bg-gray-100 text-gray-600 border border-gray-200 ml-0.5">
               v2.1.4
             </span>
@@ -2419,7 +2419,7 @@ function JenkinsStyleLoginScreen({
             <svg className="w-6 h-6 fill-amber-400 text-amber-400 shrink-0" viewBox="0 0 24 24">
               <path d="M12 2L22 12L12 22L2 12Z" />
             </svg>
-            <h1 className="text-2xl font-bold tracking-tight"><span className="text-red-600">Nova</span><span className="text-gray-900">Serve</span></h1>
+            <h1 className="text-2xl font-bold text-red-600 tracking-tight">NovaServe</h1>
             <span className="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-amber-100 text-amber-900 border border-amber-300">
               v2.1.4
             </span>
