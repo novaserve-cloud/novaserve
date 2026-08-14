@@ -315,6 +315,9 @@ importers:
       chokidar:
         specifier: ^4.0.0
         version: 4.0.3
+      esbuild:
+        specifier: ^0.24.0
+        version: 0.24.2
       hono:
         specifier: ^4.6.0
         version: 4.13.0

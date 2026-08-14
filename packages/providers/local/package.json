@@ -23,7 +23,8 @@
     "novaserve-sdk": "workspace:*",
     "hono": "^4.6.0",
     "@hono/node-server": "^1.13.0",
-    "chokidar": "^4.0.0"
+    "chokidar": "^4.0.0",
+    "esbuild": "^0.24.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
