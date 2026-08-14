@@ -225,7 +225,7 @@ export class NovaCompiler {
       outputs: {},
       buildMetadata: {
         createdIso: new Date().toISOString(),
-        novaVersion: "2.1.5",
+        novaVersion: "2.1.6",
       },
     };
 

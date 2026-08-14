@@ -223,7 +223,7 @@ export default function App() {
             </svg>
             <span className="font-extrabold text-xl text-red-600 tracking-tight">NovaServe</span>
             <span className="px-1.5 py-0.5 text-[10px] font-mono font-medium rounded bg-gray-100 text-gray-600 border border-gray-200 ml-0.5">
-              v2.1.5
+              v2.1.6
             </span>
           </div>
           <button
@@ -2421,7 +2421,7 @@ function JenkinsStyleLoginScreen({
             </svg>
             <h1 className="text-4xl font-black text-red-600 tracking-tight">NovaServe</h1>
             <span className="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-amber-100 text-amber-900 border border-amber-300 self-center">
-              v2.1.5
+              v2.1.6
             </span>
           </div>
           <p className="text-xs text-gray-500 font-medium">

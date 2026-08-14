@@ -123,7 +123,7 @@ describe("Nova Compiler & Nova IR Graph", () => {
     // buildMetadata must exist but is separate from the canonical hash
     expect(result1.ir.buildMetadata).toBeDefined();
     expect(result1.ir.buildMetadata.createdIso).toBeTruthy();
-    expect(result1.ir.buildMetadata.novaVersion).toBe("2.1.5");
+    expect(result1.ir.buildMetadata.novaVersion).toBe("2.1.6");
 
     // Modifying buildMetadata should NOT change the app hash
     const irCopy = JSON.parse(JSON.stringify(result1.ir));
