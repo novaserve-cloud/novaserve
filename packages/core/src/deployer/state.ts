@@ -6,9 +6,9 @@
  * and performs state integrity verification.
  */
 
-import { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync, copyFileSync, renameSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync, readFileSync, unlinkSync, copyFileSync, renameSync, openSync, closeSync } from "node:fs";
 import { join } from "node:path";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { ResolvedResource } from "../types/resources.js";
 
 export interface DeploymentRecord {
@@ -43,23 +43,13 @@ export class StateManager {
     this.load();
   }
 
-  /** Acquire an exclusive file lock to prevent concurrent deployments */
+  /** Acquire an exclusive file lock to prevent concurrent deployments.
+   *
+   * Uses O_EXCL (exclusive create) for atomicity — prevents TOCTOU race condition.
+   * Two concurrent processes cannot both successfully open the same file with 'wx'.
+   */
   public acquireLock(appName: string, environment: string, user = "developer"): StateLockInfo {
     const lockPath = join(this.stateDir, `${appName}-${environment}.lock`);
-    if (existsSync(lockPath)) {
-      try {
-        const raw = readFileSync(lockPath, "utf-8");
-        const lock = JSON.parse(raw) as StateLockInfo;
-        throw new Error(
-          `[NovaServe Lock] Deployment already in progress for "${appName}" (${environment}).\n` +
-            `Lock ID: ${lock.lockId} | Started: ${lock.startedIso} | User: ${lock.user}`
-        );
-      } catch (err: unknown) {
-        if (err instanceof Error && err.message.includes("[NovaServe Lock]")) {
-          throw err;
-        }
-      }
-    }
 
     const lockInfo: StateLockInfo = {
       lockId: `lock-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -69,7 +59,34 @@ export class StateManager {
       startedIso: new Date().toISOString(),
     };
 
-    writeFileSync(lockPath, JSON.stringify(lockInfo, null, 2));
+    try {
+      // O_EXCL flag guarantees atomic exclusive creation — throws EEXIST if lock already exists
+      const fd = openSync(lockPath, "wx");
+      closeSync(fd);
+      writeFileSync(lockPath, JSON.stringify(lockInfo, null, 2));
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code === "EEXIST") {
+        // Lock exists — read who holds it for a helpful error message
+        try {
+          const raw = readFileSync(lockPath, "utf-8");
+          const existing = JSON.parse(raw) as StateLockInfo;
+          throw new Error(
+            `[NovaServe Lock] Deployment already in progress for "${appName}" (${environment}).\n` +
+              `Lock ID: ${existing.lockId} | Started: ${existing.startedIso} | User: ${existing.user}`
+          );
+        } catch (readErr: unknown) {
+          if (readErr instanceof Error && readErr.message.includes("[NovaServe Lock]")) {
+            throw readErr;
+          }
+          throw new Error(
+            `[NovaServe Lock] Deployment already in progress for "${appName}" (${environment}). ` +
+              `Could not read existing lock file.`
+          );
+        }
+      }
+      throw err;
+    }
+
     return lockInfo;
   }
 
@@ -215,17 +232,30 @@ export class StateManager {
     return { reconciledCount, updatedResources };
   }
 
-  /** Generate a config hash for change detection */
+  /** Generate a deterministic config hash for change detection.
+   *
+   * Uses a custom JSON.stringify replacer function (not array) to produce
+   * sorted-key output, ensuring identical objects always produce identical hashes.
+   */
   public static hashConfig(config: Record<string, unknown>): string {
-    return createHash("sha256")
-      .update(JSON.stringify(config, Object.keys(config).sort()))
-      .digest("hex");
+    const sortedJson = JSON.stringify(config, (_key: string, value: unknown) => {
+      if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+        return Object.keys(value as Record<string, unknown>)
+          .sort()
+          .reduce((acc: Record<string, unknown>, k) => {
+            acc[k] = (value as Record<string, unknown>)[k];
+            return acc;
+          }, {});
+      }
+      return value;
+    });
+    return createHash("sha256").update(sortedJson).digest("hex");
   }
 
   // ── Private ──────────────────────────────────────────
 
   private generateId(): string {
-    return `deploy-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    return `deploy-${randomUUID()}`;
   }
 
   private load(): void {

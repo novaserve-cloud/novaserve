@@ -92,6 +92,18 @@ export class NovaSecurityScanner {
             });
           }
         }
+
+        // 5b. Audit functions with no timeout (unbounded execution risk)
+        if (!res.config.timeout) {
+          findings.push({
+            id: `SEC-FN-001-${id}`,
+            severity: "MEDIUM",
+            title: "Function Has No Timeout Configured",
+            resourceId: id,
+            description: `Function "${res.name}" does not specify a timeout. Unbounded execution can lead to runaway costs and DoS.`,
+            remediation: "Set an explicit timeout (e.g. timeout: 30) to limit function execution duration.",
+          });
+        }
       }
 
       // 5. Audit Storage Buckets for Encryption
@@ -104,6 +116,33 @@ export class NovaSecurityScanner {
           description: `Storage bucket "${res.name}" has server-side encryption disabled.`,
           remediation: "Enable SSE-S3 AES256 or KMS encryption for all stored objects.",
         });
+      }
+
+      // 6. Audit Database resources for encryption at rest
+      if (res.type === "database" && res.config.encryption === false) {
+        findings.push({
+          id: `SEC-DB-001-${id}`,
+          severity: "HIGH",
+          title: "Unencrypted Database Configured",
+          resourceId: id,
+          description: `Database "${res.name}" has encryption at rest disabled.`,
+          remediation: "Enable server-side encryption for all DynamoDB tables or database instances.",
+        });
+      }
+
+      // 7. Audit API resources for wildcard CORS origins
+      if (res.type === "api") {
+        const cors = res.config.cors as { allowOrigins?: string[] } | undefined;
+        if (cors?.allowOrigins?.includes("*")) {
+          findings.push({
+            id: `SEC-API-001-${id}`,
+            severity: "MEDIUM",
+            title: "Wildcard CORS Origin Configured",
+            resourceId: id,
+            description: `API "${res.name}" allows requests from all origins ("*"). This exposes the API to cross-origin attacks.`,
+            remediation: "Restrict CORS allowOrigins to your specific frontend domain(s).",
+          });
+        }
       }
     }
 

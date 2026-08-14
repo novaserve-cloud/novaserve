@@ -135,13 +135,38 @@ export class DependencyGraph {
   }
 
   private calculateDepths(): void {
-    const queue: string[] = [];
+    // Use Kahn's algorithm approach: compute in-degree, process in topological order
+    // This correctly handles diamond dependencies by ensuring a node's depth is the
+    // maximum depth of ANY of its predecessors + 1 (not just the first one processed).
+    const inDegree = new Map<string, number>();
 
     for (const [id, node] of this.nodes) {
+      if (!inDegree.has(id)) inDegree.set(id, 0);
+      for (const depId of node.dependencies) {
+        inDegree.set(depId, (inDegree.get(depId) ?? 0));
+      }
+    }
+
+    // Count how many dependencies each node has (in-degree in dependency direction)
+    for (const [id, node] of this.nodes) {
+      inDegree.set(id, node.dependencies.size);
+    }
+
+    // Start BFS with nodes that have no dependencies (depth 0)
+    const queue: string[] = [];
+    for (const [id, node] of this.nodes) {
+      node.depth = 0;
       if (node.dependencies.size === 0) {
-        node.depth = 0;
         queue.push(id);
       }
+    }
+
+    // Process nodes in topological order, updating depth to be the maximum
+    // of (any predecessor's depth + 1). We use an indegree counter to only
+    // enqueue a node once ALL its predecessors have been processed.
+    const processedInDegree = new Map<string, number>();
+    for (const [id, node] of this.nodes) {
+      processedInDegree.set(id, node.dependencies.size);
     }
 
     while (queue.length > 0) {
@@ -151,8 +176,15 @@ export class DependencyGraph {
       for (const depId of node.dependents) {
         const depNode = this.nodes.get(depId);
         if (depNode) {
+          // Update depth to be the maximum across all incoming paths
           depNode.depth = Math.max(depNode.depth, node.depth + 1);
-          queue.push(depId);
+
+          // Only enqueue once all predecessors have been processed
+          const remaining = (processedInDegree.get(depId) ?? 1) - 1;
+          processedInDegree.set(depId, remaining);
+          if (remaining === 0) {
+            queue.push(depId);
+          }
         }
       }
     }

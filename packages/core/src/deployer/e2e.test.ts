@@ -7,65 +7,106 @@ import { ProductionSafetyEngine } from "./safety.js";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { NovaProvider, DeploymentPlan, DeployResult, ResolvedResource } from "../types/provider.js";
+import type {
+  NovaProvider,
+  DeploymentPlan,
+  DeployResult,
+  ValidationResult,
+  ProviderStatus,
+  LogEntry,
+  LogOptions,
+  InvokeResult,
+} from "../types/provider.js";
+import type { Resource, ResolvedResource } from "../types/resources.js";
+import type { NovaAppConfig } from "novaserve-sdk";
 
-/** Mock Cloud Provider implementing NovaProvider contract for E2E tests */
+/**
+ * MockCloudProvider: Fully implements NovaProvider interface for hermetic E2E tests.
+ *
+ * All methods return correct shapes matching the interface contract — no interface drift,
+ * no `as any` casts, no partial implementations.
+ */
 class MockCloudProvider implements NovaProvider {
-  public displayName = "Mock Multi-Cloud Provider";
+  readonly name = "mock";
+  readonly displayName = "Mock Multi-Cloud Provider";
+
   public liveDeployed: Record<string, ResolvedResource> = {};
 
-  async configure(): Promise<void> {}
-  async isConfigured(): Promise<{ name: string; configured: boolean }> {
-    return { name: this.displayName, configured: true };
+  async init(_config: NovaAppConfig): Promise<void> {}
+
+  async validate(_resources: Resource[]): Promise<ValidationResult> {
+    return { valid: true, errors: [], warnings: [] };
   }
 
   async deploy(plan: DeploymentPlan): Promise<DeployResult> {
-    const outputs: Record<string, string> = {};
     const deployedResources: ResolvedResource[] = [];
+    const outputs: Record<string, string> = {};
+    const errors: Array<{ resource: string; error: string }> = [];
+    const startTime = Date.now();
 
     for (const action of plan.actions) {
       if (action.action === "skip") continue;
 
-      const resName = action.resource?.name || (action as any).name;
-      const resType = action.resource?.type || (action as any).resourceType;
-      const resConfig = action.resource?.config || {};
-      const resDeps = action.resource?.dependencies || (action as any).dependsOn || [];
+      // NovaPlanAction always carries a populated resource field (see planner.ts)
+      const resource = action.resource;
+      if (!resource?.name) continue;
 
-      const physicalId = `arn:cloud:res:${plan.appName}-${resName}`;
-      const resOutputKey = `${resName}_url`;
+      const physicalId = `arn:cloud:res:${plan.appName}-${resource.name}`;
+      const resOutputKey = `${resource.name}_url`;
 
       const resolved: ResolvedResource = {
-        type: resType,
-        name: resName,
-        config: resConfig,
-        dependencies: resDeps,
+        type: resource.type,
+        name: resource.name,
+        config: resource.config,
+        dependencies: resource.dependencies,
         id: physicalId,
-        configHash: "hash-" + Date.now(),
+        configHash: `hash-${resource.name}`,
         provider: plan.provider,
         providerId: physicalId,
         status: "deployed",
-        outputs: { [resOutputKey]: `https://${resName}.mockcloud.io` },
+        outputs: { [resOutputKey]: `https://${resource.name}.mockcloud.io` },
       };
 
       if (action.action === "delete") {
-        delete this.liveDeployed[resName];
+        delete this.liveDeployed[resource.name];
       } else {
-        this.liveDeployed[resName] = resolved;
+        this.liveDeployed[resource.name] = resolved;
         deployedResources.push(resolved);
-        outputs[resOutputKey] = `https://${resName}.mockcloud.io`;
+        outputs[resOutputKey] = `https://${resource.name}.mockcloud.io`;
       }
     }
 
     return {
-      success: true,
-      appName: plan.appName,
-      environment: plan.environment,
-      provider: plan.provider,
-      deployedResources,
+      success: errors.length === 0,
+      resources: deployedResources,
+      durationMs: Date.now() - startTime,
+      errors,
       outputs,
-      durationMs: 150,
-      timestamp: new Date().toISOString(),
     };
+  }
+
+
+
+
+  async destroy(_resources: ResolvedResource[]): Promise<void> {
+    this.liveDeployed = {};
+  }
+
+  async *getLogs(_resource: string, _options?: LogOptions): AsyncIterable<LogEntry> {
+    // No-op mock — yields nothing
+  }
+
+  async invoke(_functionName: string, _payload: unknown): Promise<InvokeResult> {
+    return {
+      statusCode: 200,
+      body: { ok: true },
+      headers: {},
+      durationMs: 5,
+    };
+  }
+
+  async getStatus(): Promise<ProviderStatus> {
+    return { name: this.displayName, configured: true, region: "mock-region" };
   }
 }
 
@@ -123,12 +164,14 @@ describe("NovaServe E2E Lifecycle & Multi-Cloud Test Suite — 10/10 Maturity", 
 
     // 4. Acquire Lock & Deploy to Mock Cloud Provider
     const lock = stateManager.acquireLock("e2e-app", "staging");
+    expect(lock.lockId).toBeDefined(); // Verify lock was actually acquired
     const deployResult = await mockProvider.deploy(initialPlan);
     expect(deployResult.success).toBe(true);
-    expect(deployResult.deployedResources.length).toBe(4);
+    // DeployResult.resources (not deployedResources) — interface-correct shape
+    expect(deployResult.resources.length).toBe(4);
 
     // Save Deployment Record with enriched Provider Identity
-    stateManager.saveDeployment("e2e-app", "staging", "aws", deployResult.deployedResources);
+    stateManager.saveDeployment("e2e-app", "staging", "aws", deployResult.resources);
     stateManager.releaseLock("e2e-app", "staging");
 
     // 5. Verify State Persistence
@@ -181,7 +224,8 @@ describe("NovaServe E2E Lifecycle & Multi-Cloud Test Suite — 10/10 Maturity", 
 
     const remediationPlan = NovaDriftEngine.createDriftRemediationPlan(
       driftReport,
-      updatedCompile.ir
+      updatedCompile.ir,
+      "aws"
     );
     expect(remediationPlan.actions.length).toBeGreaterThan(0);
 

@@ -23,4 +23,4 @@ pnpm add novaserve-provider-aws
 
 ## License
 
-MIT © Md Shadab Azam Ansari & NovaServe Contributors
+Apache-2.0 © Md Shadab Azam Ansari & NovaServe Contributors

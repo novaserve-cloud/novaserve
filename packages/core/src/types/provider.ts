@@ -62,6 +62,7 @@ export interface DeploymentPlan {
   summary: {
     create: number;
     update: number;
+    replace: number;
     delete: number;
     skip: number;
   };

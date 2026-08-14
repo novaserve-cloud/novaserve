@@ -142,7 +142,8 @@ export class NovaDriftEngine {
   /** Generate an executable DeploymentPlan to fix detected infrastructure drift */
   public static createDriftRemediationPlan(
     report: DriftReport,
-    expectedIR: NovaIRGraph
+    expectedIR: NovaIRGraph,
+    provider = "aws"
   ): DeploymentPlan {
     const actions: DeploymentPlanAction[] = [];
 
@@ -169,12 +170,13 @@ export class NovaDriftEngine {
 
     return {
       appName: expectedIR.app.name,
-      provider: "aws",
+      provider,
       environment: expectedIR.app.environment,
       actions,
       summary: {
         create: actions.filter((a) => a.action === "create").length,
         update: actions.filter((a) => a.action === "update").length,
+        replace: 0,
         delete: 0,
         skip: 0,
       },

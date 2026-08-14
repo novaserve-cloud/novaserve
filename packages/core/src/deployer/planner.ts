@@ -8,6 +8,7 @@
 import { createHash } from "node:crypto";
 import type { NovaIRGraph, NovaIRResource } from "../ir/schema.js";
 import { RESOURCE_CAPABILITY_MATRIX, type UpdateStrategy } from "../types/lifecycle.js";
+import type { Resource } from "../types/resources.js";
 
 export interface ResourceDiffItem {
   attribute: string;
@@ -28,6 +29,8 @@ export interface NovaPlanAction {
   dataLossWarning?: string;
   diffs?: ResourceDiffItem[];
   dependsOn: string[];
+  /** Resolved Resource object — satisfies DeploymentPlanAction.resource contract */
+  resource: Resource;
 }
 
 export interface NovaPlanResult {
@@ -121,6 +124,7 @@ export class NovaPlanner {
           estimatedMonthlyCostUsd: monthlyCost,
           updateStrategy: "in-place",
           dependsOn: res.dependencies,
+          resource: { type: res.type as Resource["type"], name: res.name, config: res.config, dependencies: res.dependencies },
         });
         summary.create++;
         totalEstimatedSeconds += sec;
@@ -164,6 +168,7 @@ export class NovaPlanner {
               : undefined,
             diffs,
             dependsOn: res.dependencies,
+            resource: { type: res.type as Resource["type"], name: res.name, config: res.config, dependencies: res.dependencies },
           });
           summary.replace++;
           totalEstimatedSeconds += sec * 2;
@@ -180,6 +185,7 @@ export class NovaPlanner {
             updateStrategy: capability?.defaultStrategy || "in-place",
             diffs,
             dependsOn: res.dependencies,
+            resource: { type: res.type as Resource["type"], name: res.name, config: res.config, dependencies: res.dependencies },
           });
           summary.update++;
           totalEstimatedSeconds += sec;
@@ -195,6 +201,7 @@ export class NovaPlanner {
           estimatedSeconds: 0,
           estimatedMonthlyCostUsd: monthlyCost,
           dependsOn: res.dependencies,
+          resource: { type: res.type as Resource["type"], name: res.name, config: res.config, dependencies: res.dependencies },
         });
         summary.skip++;
       }
@@ -212,6 +219,12 @@ export class NovaPlanner {
           estimatedSeconds: 3,
           estimatedMonthlyCostUsd: 0,
           dependsOn: [],
+          resource: {
+            type: (activeId.split("-")[0] || "function") as Resource["type"],
+            name: activeId.split("-").slice(1).join("-") || activeId,
+            config: activeState[activeId]?.config ?? {},
+            dependencies: [],
+          },
         });
         summary.delete++;
         totalEstimatedSeconds += 3;

@@ -17,7 +17,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/novaserve"><img src="https://img.shields.io/npm/v/novaserve.svg?style=flat-square&color=6366f1" alt="npm version" /></a>
   <a href="https://www.npmjs.com/package/novaserve"><img src="https://img.shields.io/npm/dm/novaserve.svg?style=flat-square&color=38bdf8" alt="npm downloads" /></a>
-  <a href="https://github.com/sazamansari/NovaServe-/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="license" /></a>
+  <a href="https://github.com/sazamansari/NovaServe-/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg?style=flat-square" alt="license" /></a>
   <a href="https://typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-5.7+-3178c6.svg?style=flat-square" alt="TypeScript" /></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg?style=flat-square" alt="node version" /></a>
   <a href="https://github.com/sazamansari/NovaServe-/actions"><img src="https://img.shields.io/badge/CI-passing-success.svg?style=flat-square" alt="CI status" /></a>
@@ -362,7 +362,16 @@ If you discover a security vulnerability, please review our [SECURITY.md](SECURI
 
 ## 17. License
 
-Licensed under the **MIT License** © Md Shadab Azam Ansari & NovaServe Contributors. See [LICENSE](LICENSE) for details.
+Licensed under the **Apache License, Version 2.0** © Md Shadab Azam Ansari & NovaServe Contributors. See [LICENSE](LICENSE) and [NOTICE](NOTICE) for details.
+
+### License Comparison
+
+| License        | Best if you want                                 | Commercial use |
+| -------------- | ------------------------------------------------ | -------------- |
+| **MIT**        | Maximum adoption and simplicity                  | ✅              |
+| **Apache 2.0** | Open source + stronger patent protection         | ✅              |
+| **GPLv3**      | Derivatives should remain open source            | ✅              |
+| **AGPLv3**     | Even SaaS/network modifications should be shared | ✅              |
 
 ---
 

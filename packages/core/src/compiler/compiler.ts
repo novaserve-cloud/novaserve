@@ -5,7 +5,7 @@
  * into a provider-neutral, versioned, diffable Nova Intermediate Representation (Nova IR).
  */
 
-import { createHash } from "crypto";
+import { createHash } from "node:crypto";
 import type { NovaIRGraph, NovaIRResource, NovaIRResourceType } from "../ir/schema.js";
 import { validateCapabilities, type CapabilityName } from "./capabilities.js";
 import { generateLeastPrivilegePermissions } from "./iam.js";
@@ -157,7 +157,7 @@ export class NovaCompiler {
   /** Compile application resources into Nova IR Graph */
   public static compile(options: CompileOptions): CompileResult {
     const environment = options.environment || "development";
-    const region = options.region || "ap-south-1";
+    const region = options.region || "us-east-1";
     const targetProvider = options.targetProvider || "aws";
 
     const irResources: Record<string, NovaIRResource> = {};
@@ -225,7 +225,7 @@ export class NovaCompiler {
       outputs: {},
       buildMetadata: {
         createdIso: new Date().toISOString(),
-        novaVersion: "0.1.0",
+        novaVersion: "2.1.5",
       },
     };
 

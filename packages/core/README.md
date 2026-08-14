@@ -31,4 +31,4 @@ pnpm add novaserve-core
 
 ## License
 
-MIT © Md Shadab Azam Ansari & NovaServe Contributors
+Apache-2.0 © Md Shadab Azam Ansari & NovaServe Contributors

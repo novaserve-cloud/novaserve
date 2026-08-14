@@ -86,6 +86,7 @@ export class DockerProvider implements NovaProvider {
       summary: {
         create: actions.filter((a) => a.action === "create").length,
         update: actions.filter((a) => a.action === "update").length,
+        replace: actions.filter((a) => a.action === "replace").length,
         delete: actions.filter((a) => a.action === "delete").length,
         skip: actions.filter((a) => a.action === "skip").length,
       },

@@ -151,10 +151,16 @@ export class DeploymentJournal {
 
   private updateGlobalStatus(): void {
     const states = Object.values(this.record.entries).map((e) => e.state);
-    if (states.includes("FAILED") || states.includes("UNKNOWN")) {
-      this.record.status = states.includes("UNKNOWN") ? "UNKNOWN" : "FAILED";
-    } else if (states.every((s) => s === "SUCCESS")) {
+    if (states.includes("FAILED")) {
+      this.record.status = "FAILED";
+    } else if (states.includes("UNKNOWN")) {
+      this.record.status = "UNKNOWN";
+    } else if (states.includes("PENDING") || states.includes("RUNNING")) {
+      // Some entries haven't finished yet — stay RUNNING
+      this.record.status = "RUNNING";
+    } else if (states.length > 0 && states.every((s) => s === "SUCCESS")) {
       this.record.status = "SUCCESS";
     }
+    this.record.updatedIso = new Date().toISOString();
   }
 }

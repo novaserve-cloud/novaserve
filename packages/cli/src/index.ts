@@ -60,15 +60,21 @@ import { aiCommand } from "./commands/ai.js";
 import { addCommand, pluginsCommand } from "./commands/plugins.js";
 import { dashboardCommand } from "./commands/dashboard.js";
 
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const { version } = require("../package.json") as { version: string };
+
 const program = new Command();
 
 program
   .name("nova")
   .description("NovaServe — The next-generation, cloud-agnostic serverless development framework.")
-  .version("2.0.0")
+  .version(version)
   .hook("preAction", () => {
     printBanner();
   });
+
 
 // Register all core commands
 program.addCommand(initCommand());

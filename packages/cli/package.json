@@ -73,7 +73,7 @@
     "dist",
     "README.md"
   ],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "allowScripts": {
     "esbuild": true,
     "fsevents": true

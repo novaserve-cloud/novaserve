@@ -5,7 +5,7 @@
  * API requests, function executions, database queries, and log streams.
  */
 
-import { createHash } from "crypto";
+import { randomBytes } from "node:crypto";
 
 export interface NovaSpan {
   spanId: string;
@@ -29,16 +29,30 @@ export interface NovaTraceContext {
   hasError: boolean;
 }
 
+const MAX_ACTIVE_TRACES = 1000;
+
 export class NovaTelemetry {
   private static activeTraces: Map<string, NovaTraceContext> = new Map();
 
-  /** Generate a new OpenTelemetry-compliant 128-bit trace ID */
+  /** Generate a new OpenTelemetry-compliant 128-bit trace ID (cryptographically random) */
   public static createTraceId(): string {
-    return createHash("md5").update(`${Date.now()}-${Math.random()}`).digest("hex");
+    return randomBytes(16).toString("hex");
+  }
+
+  /** Evict oldest traces if the map exceeds the max size (prevents memory leak) */
+  private static evictIfNeeded(): void {
+    if (this.activeTraces.size >= MAX_ACTIVE_TRACES) {
+      // Map iteration order is insertion order — delete the oldest entry
+      const firstKey = this.activeTraces.keys().next().value;
+      if (firstKey !== undefined) {
+        this.activeTraces.delete(firstKey);
+      }
+    }
   }
 
   /** Start a new trace context */
   public static startTrace(appName: string, environment: string, traceId = this.createTraceId()): NovaTraceContext {
+    this.evictIfNeeded();
     const context: NovaTraceContext = {
       traceId,
       appName,
