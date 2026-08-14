@@ -22,8 +22,8 @@
   ],
   "type": "module",
   "bin": {
-    "nova": "dist/index.js",
-    "novaserve": "dist/index.js"
+    "nova": "bin/nova.js",
+    "novaserve": "bin/nova.js"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -71,6 +71,7 @@
   },
   "files": [
     "dist",
+    "bin",
     "README.md"
   ],
   "license": "Apache-2.0",
