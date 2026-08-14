@@ -362,16 +362,7 @@ If you discover a security vulnerability, please review our [SECURITY.md](SECURI
 
 ## 17. License
 
-Licensed under the **Apache License, Version 2.0** © Md Shadab Azam Ansari & NovaServe Contributors. See [LICENSE](LICENSE) and [NOTICE](NOTICE) for details.
-
-### License Comparison
-
-| License        | Best if you want                                 | Commercial use |
-| -------------- | ------------------------------------------------ | -------------- |
-| **MIT**        | Maximum adoption and simplicity                  | ✅              |
-| **Apache 2.0** | Open source + stronger patent protection         | ✅              |
-| **GPLv3**      | Derivatives should remain open source            | ✅              |
-| **AGPLv3**     | Even SaaS/network modifications should be shared | ✅              |
+Licensed under the Apache License, Version 2.0 © Md Shadab Azam Ansari & NovaServe Contributors. See [LICENSE](https://github.com/sazamansari/NovaServe-/blob/main/LICENSE) and [NOTICE](https://github.com/sazamansari/NovaServe-/blob/main/NOTICE) for details.
 
 ---
 
