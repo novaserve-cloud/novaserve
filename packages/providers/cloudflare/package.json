@@ -33,13 +33,13 @@
   "author": {
     "name": "Md Shadab Azam Ansari",
     "email": "md.shadab.azam.ansari@gmail.com",
-    "url": "https://md-shadab-azam-ansari.vercel.app/"
+    "url": "https://novaserve.cloud/"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sazamansari/NovaServe-.git"
   },
-  "homepage": "https://md-shadab-azam-ansari.vercel.app/",
+  "homepage": "https://novaserve.cloud/",
   "keywords": [
     "serverless",
     "framework",
