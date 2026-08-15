@@ -17,10 +17,10 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/novaserve"><img src="https://img.shields.io/npm/v/novaserve.svg?style=flat-square&color=6366f1" alt="npm version" /></a>
   <a href="https://www.npmjs.com/package/novaserve"><img src="https://img.shields.io/npm/dm/novaserve.svg?style=flat-square&color=38bdf8" alt="npm downloads" /></a>
-  <a href="https://github.com/sazamansari/NovaServe-/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg?style=flat-square" alt="license" /></a>
+  <a href="https://github.com/novaserve-cloud/novaserve/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg?style=flat-square" alt="license" /></a>
   <a href="https://typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-5.7+-3178c6.svg?style=flat-square" alt="TypeScript" /></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen.svg?style=flat-square" alt="node version" /></a>
-  <a href="https://github.com/sazamansari/NovaServe-/actions"><img src="https://img.shields.io/badge/CI-passing-success.svg?style=flat-square" alt="CI status" /></a>
+  <a href="https://github.com/novaserve-cloud/novaserve/actions"><img src="https://img.shields.io/badge/CI-passing-success.svg?style=flat-square" alt="CI status" /></a>
 </p>
 
 ---
@@ -337,7 +337,7 @@ Contributions to NovaServe are welcome! To set up your local development environ
 
 ```bash
 # Clone repository
-git clone https://github.com/sazamansari/NovaServe-.git
+git clone https://github.com/novaserve-cloud/novaserve.git
 cd NovaServe-
 
 # Install dependencies
@@ -378,5 +378,5 @@ Licensed under the **Apache License, Version 2.0** © Md Shadab Azam Ansari & No
 ## 18. Project Links
 
 - **NPM Package**: [https://www.npmjs.com/package/novaserve](https://www.npmjs.com/package/novaserve)
-- **GitHub Repository**: [https://github.com/sazamansari/NovaServe-](https://github.com/sazamansari/NovaServe-)
+- **GitHub Repository**: [https://github.com/novaserve-cloud/novaserve](https://github.com/novaserve-cloud/novaserve)
 - **Homepage**: [https://www.novaserve.cloud/](https://www.novaserve.cloud/)

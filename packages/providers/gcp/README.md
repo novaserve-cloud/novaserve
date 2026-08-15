@@ -18,7 +18,7 @@ pnpm add novaserve-provider-gcp
 
 ## Documentation & Repository
 
-- **Main Repository**: [https://github.com/sazamansari/NovaServe-](https://github.com/sazamansari/NovaServe-)
+- **Main Repository**: [https://github.com/novaserve-cloud/novaserve](https://github.com/novaserve-cloud/novaserve)
 - **Primary Package**: [https://www.npmjs.com/package/novaserve](https://www.npmjs.com/package/novaserve)
 
 ## License
