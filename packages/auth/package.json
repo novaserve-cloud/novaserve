@@ -1,6 +1,6 @@
 {
   "name": "novaserve-auth",
-  "version": "2.1.7",
+  "version": "2.1.8",
   "description": "Authentication and authorization utilities for NovaServe applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,13 +23,13 @@
   "author": {
     "name": "Md Shadab Azam Ansari",
     "email": "md.shadab.azam.ansari@gmail.com",
-    "url": "https://novaserve.cloud/"
+    "url": "https://www.novaserve.cloud/"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sazamansari/NovaServe-.git"
   },
-  "homepage": "https://novaserve.cloud/",
+  "homepage": "https://www.novaserve.cloud/",
   "keywords": [
     "serverless",
     "framework",
