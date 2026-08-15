@@ -1,6 +1,6 @@
 {
   "name": "novaserve-runtime",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "description": "NovaServe Runtime — Universal handler wrapper with context injection",
   "type": "module",
   "main": "./dist/index.js",

@@ -1,6 +1,6 @@
 {
   "name": "novaserve",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "private": true,
   "description": "The future of serverless development — as simple as Vercel, as powerful as Terraform, as fast as Bun",
   "author": "NovaServe Contributors",
@@ -9,6 +9,7 @@
     "type": "git",
     "url": "https://github.com/novaserve/novaserve"
   },
+  "homepage": "https://novaserve.cloud/",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
