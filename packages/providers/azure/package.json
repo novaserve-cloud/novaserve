@@ -1,6 +1,6 @@
 {
   "name": "novaserve-provider-azure",
-  "version": "3.0.0",
+  "version": "2.1.10",
   "description": "NovaServe Azure Provider — Deploy to Azure Functions, Blob Storage, Service Bus, Cosmos DB, Key Vault, Redis Cache, Event Grid, and Timer Triggers",
   "type": "module",
   "main": "./dist/index.js",
