@@ -50,6 +50,9 @@ export function destroyCommand(): Command {
         } else if (providerName === "docker") {
           const { DockerProvider } = await import("novaserve-provider-docker");
           cloudProvider = new DockerProvider();
+        } else if (providerName === "kubernetes" || providerName === "k8s") {
+          const { KubernetesProvider } = await import("novaserve-provider-kubernetes");
+          cloudProvider = new KubernetesProvider();
         } else {
           logger.warn(`Provider "${providerName}" is unknown. Falling back to local for demo.`);
           const { LocalProvider } = await import("novaserve-provider-local");

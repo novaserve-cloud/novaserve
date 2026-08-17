@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/sazamansari/NovaServe-/main/docs/assets/logo.svg" height="96" alt="NovaServe" />
+  <img src="docs/assets/logo.svg" height="96" alt="NovaServe" />
 </p>
 
 <h3 align="center">The TypeScript-Native Infrastructure Platform</h3>
@@ -247,8 +247,9 @@ NovaServe uses a target adapter model to abstract cloud operations:
 | **AWS Provider** | Production | API Gateway v2, Lambda, S3, SQS, RDS PostgreSQL, EventBridge Cron |
 | **Cloudflare Provider** | Experimental | Cloudflare Workers, R2 Buckets, D1 Database, KV Namespaces |
 | **Docker Provider** | Experimental | Docker Compose containerization for local/on-prem deployment |
+| **Kubernetes Provider** | Experimental | Deployment/Service/Ingress/StatefulSet/CronJob/PVC/Secret via kubectl |
 | **Azure Provider** | Planned | Azure Functions, Blob Storage, Azure SQL |
-| **GCP Provider** | Planned | Google Cloud Functions, Cloud Storage, Cloud Pub/Sub |
+| **GCP Provider** | Experimental | Cloud Functions, Cloud Storage, Pub/Sub, Cloud Scheduler, Cloud SQL, Memorystore, API Gateway, Secret Manager |
 
 ---
 
@@ -281,6 +282,7 @@ novaserve/
 │       ├── local/     # In-process Hono development emulator
 │       ├── cloudflare/# Cloudflare Workers & R2 adapter
 │       ├── docker/    # Docker container builder adapter
+│       ├── kubernetes/# Kubernetes manifest & kubectl adapter
 │       ├── azure/     # Azure Functions adapter
 │       └── gcp/       # Google Cloud Functions adapter
 └── apps/
@@ -327,6 +329,7 @@ novaserve/
 - [x] **Least-Privilege IAM Generator**: Automatic derivation of scoped IAM policy statements.
 - [x] **Drift Engine & Remediation**: Detection and resolution of live infrastructure drift (`nova drift`).
 - [ ] **Cloudflare & Edge Provider Maturation**: Full production readiness for Cloudflare Workers, R2, and D1.
+- [x] **Kubernetes Provider (manifest generation + kubectl apply)**: Export and apply standard Kubernetes resources.
 - [ ] **Kubernetes Custom Resource Definition (CRD)**: Direct Nova IR operator for native Kubernetes clusters.
 
 ---

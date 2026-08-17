@@ -60,6 +60,9 @@ export function deployCommand(): Command {
         } else if (provider === "docker") {
           const { DockerProvider } = await import("novaserve-provider-docker");
           cloudProvider = new DockerProvider();
+        } else if (provider === "kubernetes" || provider === "k8s") {
+          const { KubernetesProvider } = await import("novaserve-provider-kubernetes");
+          cloudProvider = new KubernetesProvider();
         } else {
           logger.warn(`Provider "${provider}" is unknown. Falling back to local for demo.`);
           const { LocalProvider } = await import("novaserve-provider-local");

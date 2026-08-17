@@ -26,6 +26,7 @@ import { CloudflareQueueService } from "./services/queues.js";
 import { CloudflareSecretsService } from "./services/secrets.js";
 import { CloudflareLogsService } from "./services/logs.js";
 import { CloudflareLiveStateInspector } from "./inspector.js";
+import { CloudflareD1Service } from "./services/d1.js";
 
 export class CloudflareProvider implements NovaProvider {
   readonly name = "cloudflare";
@@ -40,6 +41,7 @@ export class CloudflareProvider implements NovaProvider {
   private queues!: CloudflareQueueService;
   private secrets!: CloudflareSecretsService;
   private logs!: CloudflareLogsService;
+  private d1!: CloudflareD1Service;
 
   async init(config?: NovaAppConfig): Promise<void> {
     const creds = CloudflareAuthManager.getCredentials(config as unknown as Record<string, unknown>);
@@ -52,6 +54,7 @@ export class CloudflareProvider implements NovaProvider {
     this.queues = new CloudflareQueueService(this.apiToken, this.accountId);
     this.secrets = new CloudflareSecretsService(this.apiToken, this.accountId);
     this.logs = new CloudflareLogsService(this.apiToken, this.accountId);
+    this.d1 = new CloudflareD1Service(this.apiToken, this.accountId);
   }
 
   async validate(resources: Resource[]): Promise<ValidationResult> {
@@ -77,6 +80,18 @@ export class CloudflareProvider implements NovaProvider {
         warnings.push({
           resource: resource.name,
           message: "Mapped to Cloudflare Queue",
+        });
+      }
+      if (resource.type === "database") {
+        warnings.push({
+          resource: resource.name,
+          message: "Mapped to Cloudflare D1 (SQLite) - original engine selection is ignored on Cloudflare.",
+        });
+      }
+      if (resource.type === "cache") {
+        warnings.push({
+          resource: resource.name,
+          message: "Mapped to Cloudflare KV Namespace - Redis eviction and exact TTL semantics are not fully supported natively.",
         });
       }
     }
@@ -195,6 +210,52 @@ export class CloudflareProvider implements NovaProvider {
               outputs[`${res.name}_queue`] = physicalName;
               break;
             }
+            case "database": {
+              providerId = await this.d1.createDatabase(physicalName);
+              outputs[`${res.name}_d1`] = providerId;
+              break;
+            }
+            case "cache": {
+              providerId = await this.storage.createKVNamespace(physicalName);
+              outputs[`${res.name}_kv`] = providerId;
+              break;
+            }
+            case "api": {
+              const code = `export default { async fetch(request) { return new Response("Cloudflare Router Worker for ${physicalName}"); } };`;
+              const endpoint = await this.workers.uploadWorker({
+                scriptName: physicalName,
+                scriptContent: code,
+                environment: plan.environment,
+              });
+              providerId = endpoint;
+              outputs[`${res.name}_url`] = endpoint;
+              break;
+            }
+            case "cron": {
+              const code = `export default { async scheduled(controller, env, ctx) { console.log("Cron execution for ${physicalName}"); } };`;
+              providerId = await this.workers.uploadWorker({
+                scriptName: physicalName,
+                scriptContent: code,
+                environment: plan.environment,
+              });
+              const schedule = (res.config.schedule as string) || "0 * * * *";
+              await this.workers.updateCronTriggers(physicalName, [{ cron: schedule }]);
+              outputs[`${res.name}_cron`] = schedule;
+              break;
+            }
+            case "secret": {
+              const secretValue = process.env[res.name] || "REPLACE_ME_IN_PROD";
+              const dependentWorkers = plan.actions
+                .filter(a => (a.resource.type === "function" || a.resource.type === "api" || a.resource.type === "cron") && a.resource.dependencies?.includes(res.name))
+                .map(a => `${appName}-${a.resource.name}`);
+              
+              for (const workerName of dependentWorkers) {
+                await this.secrets.putSecret(workerName, res.name, secretValue);
+              }
+              providerId = `${res.name}-secret`;
+              outputs[`${res.name}_secret`] = "injected";
+              break;
+            }
           }
 
           deployedResources.push({
@@ -219,6 +280,16 @@ export class CloudflareProvider implements NovaProvider {
               break;
             case "queue":
               await this.queues.deleteQueue(physicalName);
+              break;
+            case "database":
+              await this.d1.deleteDatabase((res as ResolvedResource).id || "");
+              break;
+            case "cache":
+              await this.storage.deleteKVNamespace((res as ResolvedResource).id || "");
+              break;
+            case "api":
+            case "cron":
+              await this.workers.deleteWorker(physicalName);
               break;
           }
         }
@@ -247,6 +318,12 @@ export class CloudflareProvider implements NovaProvider {
           await this.storage.deleteR2Bucket(res.name);
         } else if (res.type === "queue") {
           await this.queues.deleteQueue(res.name);
+        } else if (res.type === "api" || res.type === "cron") {
+          await this.workers.deleteWorker(res.name);
+        } else if (res.type === "database") {
+          await this.d1.deleteDatabase(res.id);
+        } else if (res.type === "cache") {
+          await this.storage.deleteKVNamespace(res.id);
         }
       } catch {
         // Continue cleanup

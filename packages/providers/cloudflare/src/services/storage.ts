@@ -77,6 +77,26 @@ export class CloudflareStorageService {
     return namespaceId;
   }
 
+  /** Delete a KV Namespace */
+  public async deleteKVNamespace(namespaceId: string): Promise<void> {
+    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/storage/kv/namespaces/${namespaceId}`;
+    const headers = CloudflareAuthManager.getHeaders(this.apiToken);
+
+    try {
+      await cloudflareRetry(async () => {
+        const res = await fetch(url, { method: "DELETE", headers });
+        if (res.status === 404) return;
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`[Cloudflare API Error] Delete KV namespace "${namespaceId}" failed (${res.status}): ${errText}`);
+        }
+      });
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message.includes("404")) return;
+      throw err;
+    }
+  }
+
   /** Delete an R2 Object Storage bucket */
   public async deleteR2Bucket(bucketName: string): Promise<void> {
     const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/r2/buckets/${bucketName}`;

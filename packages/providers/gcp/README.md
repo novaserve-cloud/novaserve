@@ -4,9 +4,9 @@
 
 # novaserve-provider-gcp
 
-> Google Cloud Functions and Cloud Storage deployment provider for **NovaServe**.
+> Google Cloud Platform deployment provider for **NovaServe**.
 
-Target adapter compiling Nova IR graphs to Google Cloud Platform serverless infrastructure.
+Target adapter compiling Nova IR graphs to Google Cloud Platform serverless infrastructure. Supports Cloud Functions, Cloud Storage, Cloud SQL, Pub/Sub, Cloud Scheduler, Memorystore, API Gateway, and Secret Manager.
 
 ## Installation
 

@@ -144,4 +144,23 @@ export class CloudflareWorkersService {
       throw err;
     }
   }
+
+  /** Attach cron triggers to a Worker script */
+  public async updateCronTriggers(scriptName: string, crons: { cron: string }[]): Promise<void> {
+    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/workers/scripts/${scriptName}/schedules`;
+    const headers = CloudflareAuthManager.getHeaders(this.apiToken);
+
+    await cloudflareRetry(async () => {
+      const res = await fetch(url, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(crons),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`[Cloudflare API Error] Update cron triggers for "${scriptName}" failed (${res.status}): ${errText}`);
+      }
+    });
+  }
 }

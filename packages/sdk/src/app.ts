@@ -81,7 +81,14 @@ export interface NovaAppConfig {
   timeout?: number;
 
   /** Default cloud provider */
-  provider?: "aws" | "azure" | "gcp" | "cloudflare" | "docker" | "local";
+  provider?: "aws" | "azure" | "gcp" | "cloudflare" | "docker" | "local" | "kubernetes" | "k8s";
+
+  /** Kubernetes-specific configuration */
+  kubernetes?: {
+    context?: string;
+    namespace?: string;
+    apply?: boolean;
+  };
 
   /** Application resources (APIs, functions, storage, etc.) */
   resources?: Record<string, ResourceDefinition>;

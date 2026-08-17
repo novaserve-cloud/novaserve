@@ -24,8 +24,19 @@ export function driftCommand(): Command {
           resources: coreResources,
         });
 
-        const { AWSLiveStateInspector } = await import("novaserve-provider-aws");
-        const inspector = new AWSLiveStateInspector(app.config.region || "us-east-1", app.name || "nova-app");
+        let inspector: any;
+        const providerName = app.config.provider || "aws";
+        
+        if (providerName === "cloudflare") {
+          const { CloudflareLiveStateInspector } = await import("novaserve-provider-cloudflare");
+          const cfConfig = (app.config as any).cloudflare || {};
+          const token = cfConfig.apiToken || process.env.CLOUDFLARE_API_TOKEN || process.env.CF_API_TOKEN || "";
+          const account = cfConfig.accountId || process.env.CLOUDFLARE_ACCOUNT_ID || process.env.CF_ACCOUNT_ID || "";
+          inspector = new CloudflareLiveStateInspector(token, account, app.name || "nova-app");
+        } else {
+          const { AWSLiveStateInspector } = await import("novaserve-provider-aws");
+          inspector = new AWSLiveStateInspector(app.config.region || "us-east-1", app.name || "nova-app");
+        }
         const observed = await inspector.inspectResources(
           coreResources.map((r: any) => ({
             id: `${r.type}-${r.name}`,

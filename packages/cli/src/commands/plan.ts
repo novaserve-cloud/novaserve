@@ -14,7 +14,7 @@ import { loadConfig } from "../utils/config-loader.js";
 export function planCommand(): Command {
   return new Command("plan")
     .description("Generate and preview infrastructure changes from Nova IR")
-    .option("-p, --provider <name>", "Target cloud provider (aws, docker, cloudflare)", "aws")
+    .option("-p, --provider <name>", "Target cloud provider (aws, docker, kubernetes, cloudflare)", "aws")
     .option("--save <filepath>", "Save generated execution plan JSON to a file")
     .option("--json", "Output execution plan as raw machine-readable JSON", false)
     .option("--ci", "Run in non-interactive CI mode", false)

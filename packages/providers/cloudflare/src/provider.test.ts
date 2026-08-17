@@ -26,6 +26,8 @@ describe("CloudflareProvider — 8+/10 Production Architecture", () => {
       { type: "function", name: "api", config: {}, dependencies: [] },
       { type: "storage", name: "uploads", config: {}, dependencies: [] },
       { type: "queue", name: "jobs", config: {}, dependencies: [] },
+      { type: "database", name: "db", config: {}, dependencies: [] },
+      { type: "cache", name: "redis", config: {}, dependencies: [] },
     ]);
 
     expect(validation.valid).toBe(true);
@@ -38,12 +40,17 @@ describe("CloudflareProvider — 8+/10 Production Architecture", () => {
       [
         { type: "function", name: "worker", config: { memory: 128 }, dependencies: [] },
         { type: "storage", name: "bucket", config: {}, dependencies: [] },
+        { type: "database", name: "db", config: {}, dependencies: [] },
+        { type: "cache", name: "redis", config: {}, dependencies: [] },
+        { type: "api", name: "api", config: {}, dependencies: [] },
+        { type: "cron", name: "cron", config: {}, dependencies: [] },
+        { type: "secret", name: "secret", config: {}, dependencies: [] },
       ],
       []
     );
 
     expect(plan.provider).toBe("cloudflare");
-    expect(plan.actions.length).toBe(2);
-    expect(plan.summary.create).toBe(2);
+    expect(plan.actions.length).toBe(7);
+    expect(plan.summary.create).toBe(7);
   });
 });
