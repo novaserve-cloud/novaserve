@@ -52,6 +52,7 @@ export interface DeploymentPlanAction {
 /** Full deployment plan */
 export interface DeploymentPlan {
   version?: string;
+  deploymentId?: string;
   appName: string;
   provider: string;
   environment: string;

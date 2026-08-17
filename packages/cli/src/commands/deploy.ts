@@ -84,6 +84,9 @@ export function deployCommand(): Command {
         { key: "Region:", value: status.region || app.config.region || "us-east-1" },
         { key: "Runtime:", value: app.config.runtime || "node20" },
       ]);
+      for (const warning of status.warnings || []) {
+        logger.warn(warning);
+      }
 
       const engine = new DeploymentEngine(cloudProvider, process.cwd());
 

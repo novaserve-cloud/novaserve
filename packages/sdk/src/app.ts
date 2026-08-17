@@ -88,6 +88,17 @@ export interface NovaAppConfig {
     context?: string;
     namespace?: string;
     apply?: boolean;
+    dryRun?: boolean;
+    expectedContext?: string;
+    expectedCluster?: string;
+    defaultImage?: string;
+    imagePullSecrets?: string[];
+    ingressClassName?: string;
+    tlsSecretName?: string;
+    waitForRollout?: boolean;
+    rolloutTimeoutSeconds?: number;
+    serviceAccountName?: string;
+    networkPolicy?: boolean;
   };
 
   /** Application resources (APIs, functions, storage, etc.) */

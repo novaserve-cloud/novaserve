@@ -169,6 +169,7 @@ export class DeploymentEngine {
       // Map NovaPlanResult to DeploymentPlan format
       const plan: DeploymentPlan = {
         version: novaPlan.version,
+        deploymentId,
         appName: novaPlan.appName,
         provider: novaPlan.provider,
         environment: novaPlan.environment,

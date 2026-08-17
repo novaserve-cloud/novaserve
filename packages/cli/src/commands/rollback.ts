@@ -12,19 +12,26 @@ import { loadConfig } from "../utils/config-loader.js";
 export function rollbackCommand(): Command {
   return new Command("rollback")
     .description("Rollback application infrastructure to a previous known-good deployment state")
-    .argument("<deploymentId>", "Target deployment identifier (e.g. dep_123)")
+    .argument("[deploymentId]", "Target deployment identifier (e.g. dep_123). Defaults to the previous deployment.")
     .option("-e, --env <environment>", "Target environment", "production")
-    .action(async (deploymentId: string, options) => {
-      console.log(chalk.bold.yellow(`\n◆ NovaServe Infrastructure Rollback: ${deploymentId}\n`));
+    .option("--provider <provider>", "Cloud provider override")
+    .action(async (deploymentId: string | undefined, options) => {
+      console.log(chalk.bold.yellow(`\n◆ NovaServe Infrastructure Rollback${deploymentId ? `: ${deploymentId}` : ""}\n`));
 
       try {
         const app = await loadConfig();
         const stateMgr = new StateManager(process.cwd());
         const history = stateMgr.getHistory(app.name || "nova-app", options.env);
-        const targetDep = history.find((d) => d.id === deploymentId);
+        const targetDep = deploymentId
+          ? history.find((d) => d.id === deploymentId)
+          : history.length >= 2
+            ? history[history.length - 2]
+            : undefined;
 
         if (!targetDep) {
-          console.log(chalk.red(`Deployment ID "${deploymentId}" not found in state history.`));
+          console.log(chalk.red(deploymentId
+            ? `Deployment ID "${deploymentId}" not found in state history.`
+            : "No previous deployment found in state history."));
           return;
         }
 
@@ -33,6 +40,22 @@ export function rollbackCommand(): Command {
         console.log(`Provider:          ${targetDep.provider.toUpperCase()}\n`);
 
         console.log(chalk.bold.cyan("Executing rollback pass..."));
+        const providerName = options.provider || targetDep.provider || app.config.provider || "aws";
+
+        if (providerName === "kubernetes" || providerName === "k8s") {
+          const { KubernetesProvider } = await import("novaserve-provider-kubernetes");
+          const provider = new KubernetesProvider();
+          await provider.init({ ...app.config, provider: "kubernetes" });
+          const result = await provider.rollback(targetDep.resources);
+          if (!result.success) {
+            console.log(chalk.red("Kubernetes rollback failed:"));
+            for (const error of result.errors) {
+              console.log(chalk.red(`  [${error.resource}] ${error.error}`));
+            }
+            return;
+          }
+        }
+
         stateMgr.saveDeployment(app.name || "nova-app", options.env, targetDep.provider, targetDep.resources);
         console.log(chalk.bold.green(`✓ Successfully rolled back ${app.name} (${options.env}) to ${targetDep.id}!\n`));
       } catch (err: unknown) {

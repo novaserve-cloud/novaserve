@@ -19,6 +19,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@kubernetes/client-node": "^1.0.0",
     "novaserve-core": "workspace:*",
     "novaserve-sdk": "workspace:*"
   },
@@ -27,7 +28,8 @@
     "vitest": "^3.0.0"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "license": "Apache-2.0"
 }

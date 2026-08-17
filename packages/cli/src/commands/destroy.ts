@@ -12,6 +12,7 @@ export function destroyCommand(): Command {
   return new Command("destroy")
     .description("Remove all deployed resources")
     .option("-e, --env <environment>", "Target environment", "production")
+    .option("--provider <provider>", "Cloud provider override")
     .option("--force", "Skip confirmation prompt")
     .action(async (options) => {
       const app = await loadConfig();
@@ -29,7 +30,7 @@ export function destroyCommand(): Command {
       }
 
       try {
-        const providerName = app.config.provider || "aws";
+        const providerName = options.provider || app.config.provider || "aws";
         let cloudProvider;
 
         if (providerName === "local") {
