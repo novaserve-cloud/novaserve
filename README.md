@@ -239,7 +239,7 @@ Usage: `nova [command] [options]`
 
 ## 8. Provider Support Matrix
 
-NovaServe uses a target adapter model to abstract cloud operations:
+NovaServe uses a target adapter model to abstract cloud operations. With our latest update, NovaServe now features robust **Kubernetes** support, automatically translating the Nova IR into native Kubernetes manifests (Deployments, Services, Secrets, PVCs, CronJobs) and applying them via the built-in cluster client.
 
 | Provider | Status | Supported Primitives |
 |---|:---:|---|
@@ -247,7 +247,7 @@ NovaServe uses a target adapter model to abstract cloud operations:
 | **AWS Provider** | Production | API Gateway v2, Lambda, S3, SQS, RDS PostgreSQL, EventBridge Cron |
 | **Cloudflare Provider** | Experimental | Cloudflare Workers, R2 Buckets, D1 Database, KV Namespaces |
 | **Docker Provider** | Experimental | Docker Compose containerization for local/on-prem deployment |
-| **Kubernetes Provider** | Experimental | Deployment/Service/Ingress/StatefulSet/CronJob/PVC/Secret via kubectl |
+| **Kubernetes Provider** | Production | Deployment/Service/Ingress/StatefulSet/CronJob/PVC/Secret via built-in client |
 | **Azure Provider** | Planned | Azure Functions, Blob Storage, Azure SQL |
 | **GCP Provider** | Experimental | Cloud Functions, Cloud Storage, Pub/Sub, Cloud Scheduler, Cloud SQL, Memorystore, API Gateway, Secret Manager |
 
