@@ -1,7 +1,7 @@
 {
   "name": "novaserve-provider-azure",
-  "version": "2.1.9",
-  "description": "NovaServe Azure Provider — Deploy to Azure Functions, Blob Storage",
+  "version": "3.0.0",
+  "description": "NovaServe Azure Provider — Deploy to Azure Functions, Blob Storage, Service Bus, Cosmos DB, Key Vault, Redis Cache, Event Grid, and Timer Triggers",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -31,7 +31,11 @@
     "@azure/arm-apimanagement": "^9.2.0",
     "@azure/arm-cosmosdb": "^16.0.0",
     "@azure/arm-authorization": "^9.0.0",
-    "@azure/arm-monitor": "^7.0.0"
+    "@azure/arm-monitor": "^7.0.0",
+    "@azure/arm-keyvault": "^3.1.0",
+    "@azure/keyvault-secrets": "^4.9.0",
+    "@azure/arm-rediscache": "^8.1.0",
+    "@azure/arm-eventgrid": "^14.2.0"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
@@ -57,6 +61,11 @@
     "cloud",
     "typescript",
     "iac",
-    "novaserve"
+    "novaserve",
+    "azure",
+    "azure-functions",
+    "keyvault",
+    "redis",
+    "eventgrid"
   ]
 }

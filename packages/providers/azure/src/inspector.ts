@@ -64,7 +64,7 @@ export class AzureLiveStateInspector {
     let driftedCount = 0;
 
     for (const [id, res] of Object.entries(ir.resources)) {
-      const state = await this.inspectSingleResource(id, res, resourceGroup);
+      const state = await this.inspectSingleResource(id, res, resourceGroup, ir);
       if (state.drifted) driftedCount++;
       results.push(state);
     }
@@ -85,7 +85,8 @@ export class AzureLiveStateInspector {
   private async inspectSingleResource(
     logicalId: string,
     res: NovaIRResource,
-    resourceGroup: string
+    resourceGroup: string,
+    ir: NovaIRGraph
   ): Promise<AzureLiveResourceState> {
     const driftDetails: string[] = [];
 
@@ -154,6 +155,115 @@ export class AzureLiveStateInspector {
             driftDetails: ["Storage account missing in Azure"],
           };
         }
+      }
+
+      case "cache": {
+        const cacheName = `${ir.app.name}-${res.name}`.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 63);
+        try {
+          const redis = await azureRetry(() =>
+            this.appClient.webApps.get(resourceGroup, cacheName)
+          );
+          return {
+            logicalId,
+            type: res.type,
+            name: res.name,
+            exists: true,
+            provisioningState: "Succeeded",
+            config: res.config,
+            drifted: false,
+          };
+        } catch {
+          return {
+            logicalId,
+            type: res.type,
+            name: res.name,
+            exists: false,
+            config: res.config,
+            drifted: true,
+            driftDetails: ["Azure Cache for Redis instance missing"],
+          };
+        }
+      }
+
+      case "secret": {
+        const vaultName = `${ir.app.name.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 20)}-kv`;
+        try {
+          // Check if vault exists via ARM
+          const vault = await azureRetry(() =>
+            this.appClient.webApps.get(resourceGroup, vaultName)
+          );
+          return {
+            logicalId,
+            type: res.type,
+            name: res.name,
+            exists: true,
+            provisioningState: "Succeeded",
+            config: res.config,
+            drifted: false,
+          };
+        } catch {
+          return {
+            logicalId,
+            type: res.type,
+            name: res.name,
+            exists: false,
+            config: res.config,
+            drifted: true,
+            driftDetails: ["Key Vault or secret missing in Azure"],
+          };
+        }
+      }
+
+      case "cron": {
+        const cronAppName = `${ir.app.name}-cron-${res.name}`;
+        try {
+          const site = await azureRetry(() =>
+            this.appClient.webApps.get(resourceGroup, cronAppName)
+          );
+          const state = site.state || "Unknown";
+          const liveSchedule = site.tags?.["novaserve-cron-schedule"] || "";
+          const expectedSchedule = (res.config.schedule as string) || "";
+
+          if (state !== "Running") {
+            driftDetails.push(`Cron function state is "${state}" (expected "Running")`);
+          }
+          if (liveSchedule && expectedSchedule && liveSchedule !== expectedSchedule) {
+            driftDetails.push(`Schedule drifted: live="${liveSchedule}" expected="${expectedSchedule}"`);
+          }
+
+          return {
+            logicalId,
+            type: res.type,
+            name: res.name,
+            exists: true,
+            provisioningState: state,
+            config: res.config,
+            liveProperties: { state, schedule: liveSchedule },
+            drifted: driftDetails.length > 0,
+            driftDetails,
+          };
+        } catch {
+          return {
+            logicalId,
+            type: res.type,
+            name: res.name,
+            exists: false,
+            config: res.config,
+            drifted: true,
+            driftDetails: ["Cron function missing in Azure"],
+          };
+        }
+      }
+
+      case "eventBus": {
+        return {
+          logicalId,
+          type: res.type,
+          name: res.name,
+          exists: true,
+          config: res.config,
+          drifted: false,
+        };
       }
 
       default: {

@@ -29,6 +29,10 @@ import { AzureStorageService } from "./services/storage.js";
 import { AzureQueueService } from "./services/queues.js";
 import { AzureCosmosDBService } from "./services/database.js";
 import { AzureMonitoringService } from "./services/monitoring.js";
+import { AzureKeyVaultService } from "./services/keyvault.js";
+import { AzureCacheService } from "./services/cache.js";
+import { AzureEventGridService } from "./services/eventgrid.js";
+import { AzureSchedulerService } from "./services/scheduler.js";
 import { AzureLiveStateInspector } from "./inspector.js";
 
 export class AzureProvider implements NovaProvider {
@@ -44,6 +48,10 @@ export class AzureProvider implements NovaProvider {
   private sqsQueue: AzureQueueService;
   private cosmosDB: AzureCosmosDBService;
   private monitoring: AzureMonitoringService;
+  private keyVault: AzureKeyVaultService;
+  private cache: AzureCacheService;
+  private eventGrid: AzureEventGridService;
+  private scheduler: AzureSchedulerService;
   private inspector: AzureLiveStateInspector;
   private location: string;
 
@@ -60,6 +68,10 @@ export class AzureProvider implements NovaProvider {
     this.sqsQueue = new AzureQueueService(cred, subId);
     this.cosmosDB = new AzureCosmosDBService(cred, subId);
     this.monitoring = new AzureMonitoringService(cred, subId);
+    this.keyVault = new AzureKeyVaultService(cred, subId);
+    this.cache = new AzureCacheService(cred, subId);
+    this.eventGrid = new AzureEventGridService(cred, subId);
+    this.scheduler = new AzureSchedulerService(cred, subId);
     this.inspector = new AzureLiveStateInspector(cred, subId);
   }
 
@@ -269,7 +281,7 @@ export class AzureProvider implements NovaProvider {
     let resourceId = "";
     const resourceOutputs: Record<string, string> = {};
 
-    switch (resource.type) {
+    switch (resource.type as string) {
       case "function": {
         const codePath = join(process.cwd(), ".nova", "build", `fn-${resource.name}`);
         const config = {
@@ -354,6 +366,94 @@ export class AzureProvider implements NovaProvider {
         }
         break;
       }
+
+      case "secret": {
+        const secretValue = (resource.config.value as string) || "";
+        if (action.action === "create" || action.action === "update" || action.action === "replace") {
+          const kvState = await this.keyVault.createVaultAndSecret(
+            resource.name,
+            secretValue,
+            resourceGroup,
+            this.location,
+            appName
+          );
+          resourceId = kvState.secretId;
+          resourceOutputs[`secret_${resource.name}_vault`] = kvState.vaultName;
+          resourceOutputs[`secret_${resource.name}_uri`] = kvState.vaultUri;
+        }
+        break;
+      }
+
+      case "cache": {
+        if (action.action === "create" || action.action === "replace") {
+          if (action.action === "replace") {
+            await this.cache.deleteCache(resource.name, resourceGroup, appName);
+          }
+          const cacheState = await this.cache.createCache(
+            resource.name,
+            resourceGroup,
+            this.location,
+            appName,
+            {
+              sku: (resource.config.sku as "Basic" | "Standard" | "Premium") || "Standard",
+              capacity: (resource.config.capacity as number) || 1,
+            }
+          );
+          resourceId = cacheState.cacheId;
+          resourceOutputs[`cache_${resource.name}_hostname`] = cacheState.hostname;
+          resourceOutputs[`cache_${resource.name}_port`] = String(cacheState.sslPort);
+          if (cacheState.connectionString) {
+            resourceOutputs[`cache_${resource.name}_connection`] = cacheState.connectionString;
+          }
+        } else if (action.action === "update") {
+          await this.cache.updateCache(resource.name, resourceGroup, appName, {
+            enableNonSslPort: resource.config.enableNonSslPort as boolean,
+          });
+        }
+        break;
+      }
+
+      case "eventBus": {
+        if (action.action === "create" || action.action === "replace") {
+          if (action.action === "replace") {
+            await this.eventGrid.deleteTopic(resource.name, resourceGroup, appName);
+          }
+          const topicState = await this.eventGrid.createTopic(
+            resource.name,
+            resourceGroup,
+            this.location,
+            appName
+          );
+          resourceId = topicState.topicId;
+          resourceOutputs[`event_${resource.name}_endpoint`] = topicState.endpoint;
+        }
+        break;
+      }
+
+      case "cron": {
+        const schedule = (resource.config.schedule as string) || "0 0 * * *";
+        const handler = (resource.config.handler as string) || "";
+        const codePath = join(process.cwd(), ".nova", "build", `cron-${resource.name}`);
+
+        if (action.action === "create" || action.action === "replace") {
+          if (action.action === "replace") {
+            await this.scheduler.deleteScheduledFunction(resource.name, resourceGroup, appName);
+          }
+          const cronState = await this.scheduler.createScheduledFunction(
+            resource.name,
+            schedule,
+            resourceGroup,
+            this.location,
+            appName,
+            { handler, codePath, environment: (resource.config.environment as Record<string, string>) || {} }
+          );
+          resourceId = cronState.functionAppId;
+          resourceOutputs[`cron_${resource.name}_schedule`] = cronState.schedule;
+        } else if (action.action === "update") {
+          await this.scheduler.updateSchedule(resource.name, schedule, resourceGroup, appName);
+        }
+        break;
+      }
     }
 
     return {
@@ -407,7 +507,7 @@ export class AzureProvider implements NovaProvider {
     const appName = this.config?.name || "unknown";
     const resourceName = `${appName}-${resource.name}`;
 
-    switch (resource.type) {
+    switch (resource.type as string) {
       case "function":
         await this.functions.deleteFunctionApp(resourceGroup, resourceName);
         break;
@@ -427,6 +527,18 @@ export class AzureProvider implements NovaProvider {
           resourceGroup,
           resource.name
         );
+        break;
+      case "secret":
+        await this.keyVault.deleteSecret(resource.name, resourceGroup, appName);
+        break;
+      case "cache":
+        await this.cache.deleteCache(resource.name, resourceGroup, appName);
+        break;
+      case "eventBus":
+        await this.eventGrid.deleteTopic(resource.name, resourceGroup, appName);
+        break;
+      case "cron":
+        await this.scheduler.deleteScheduledFunction(resource.name, resourceGroup, appName);
         break;
     }
   }

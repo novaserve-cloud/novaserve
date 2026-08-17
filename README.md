@@ -37,7 +37,7 @@ ONE SDK  ──►  ONE COMPILER  ──►  ONE IR  ──►  ONE PLANNER  ─
 
 At the core of NovaServe is a multi-stage compilation pipeline. The application specification is evaluated by the **Nova Compiler**, which performs dependency graph resolution, cycle detection, and type checking before emitting a canonical **Nova Intermediate Representation (Nova IR 1.0.0)**. The intermediate graph is processed by a deterministic planning engine to compute fine-grained execution diffs, least-privilege IAM policies, and cost projections before invoking pluggable provider adapters.
 
-Designed for modern software development teams, NovaServe decouples high-level application intent from low-level cloud provider primitives. This abstraction allows applications to run locally on an in-process emulator or deploy seamlessly to **AWS**, **Cloudflare**, **Azure**, **GCP**, or **Docker** without modifying application handler code.
+Designed for modern software development teams, NovaServe decouples high-level application intent from low-level cloud provider primitives. This abstraction allows applications to run locally on an in-process emulator or deploy seamlessly to **AWS**, **Azure**, **GCP**, **Cloudflare**, **Kubernetes**, or **Docker** without modifying application handler code.
 
 ---
 
@@ -68,7 +68,7 @@ Nova Intermediate Representation (IR)
       ↓
 Deterministic Planner & Cost Estimator
       ↓
-Target Provider Adapter (AWS / Local / Cloudflare / Docker)
+Target Provider Adapter (AWS / Azure / GCP / Local / Cloudflare / Docker / Kubernetes)
       ↓
 Cloud Resources
 ```
@@ -87,7 +87,7 @@ flowchart TD
     D --> E[Diff Planner & Cost Engine]
     E --> F[Journaled Deployment Engine]
     F --> G[Provider Adapters]
-    G --> H[AWS / Cloudflare / Azure / GCP / Docker / Local]
+    G --> H[AWS / Azure / GCP / Cloudflare / Kubernetes / Docker / Local]
 ```
 
 ### Compilation Pipeline Stages
@@ -239,17 +239,17 @@ Usage: `nova [command] [options]`
 
 ## 8. Provider Support Matrix
 
-NovaServe uses a target adapter model to abstract cloud operations. With our latest update, NovaServe now features robust **Kubernetes** support, automatically translating the Nova IR into native Kubernetes manifests (Deployments, Services, Secrets, PVCs, CronJobs) and applying them via the built-in cluster client.
+NovaServe uses a target adapter model to abstract cloud operations. Each provider adapter translates the Nova IR graph into native cloud API calls with full lifecycle management, drift detection, and least-privilege IAM generation.
 
 | Provider | Status | Supported Primitives |
 |---|:---:|---|
 | **Local Emulator** | Production | HTTP API (Hono), In-memory SQS, Local Storage, Process Runner |
 | **AWS Provider** | Production | API Gateway v2, Lambda, S3, SQS, RDS PostgreSQL, EventBridge Cron |
+| **Azure Provider** | Production | Azure Functions, Blob Storage, Service Bus Queues, Cosmos DB, API Management, Managed Identity RBAC, Azure Monitor |
+| **GCP Provider** | Experimental | Cloud Functions, Cloud Storage, Pub/Sub, Cloud Scheduler, Cloud SQL, Memorystore, API Gateway, Secret Manager |
+| **Kubernetes Provider** | Production | Deployment/Service/Ingress/StatefulSet/CronJob/PVC/Secret via built-in client |
 | **Cloudflare Provider** | Experimental | Cloudflare Workers, R2 Buckets, D1 Database, KV Namespaces |
 | **Docker Provider** | Experimental | Docker Compose containerization for local/on-prem deployment |
-| **Kubernetes Provider** | Production | Deployment/Service/Ingress/StatefulSet/CronJob/PVC/Secret via built-in client |
-| **Azure Provider** | Planned | Azure Functions, Blob Storage, Azure SQL |
-| **GCP Provider** | Experimental | Cloud Functions, Cloud Storage, Pub/Sub, Cloud Scheduler, Cloud SQL, Memorystore, API Gateway, Secret Manager |
 
 ---
 
@@ -328,9 +328,11 @@ novaserve/
 - [x] **AWS & Local Emulation Engine**: Production support for AWS Lambda, S3, SQS, API Gateway, and Hono local dev.
 - [x] **Least-Privilege IAM Generator**: Automatic derivation of scoped IAM policy statements.
 - [x] **Drift Engine & Remediation**: Detection and resolution of live infrastructure drift (`nova drift`).
-- [ ] **Cloudflare & Edge Provider Maturation**: Full production readiness for Cloudflare Workers, R2, and D1.
+- [x] **Azure Provider (Production)**: Full Azure Functions, Blob Storage, Service Bus, Cosmos DB, APIM, Managed Identity RBAC, Monitor, and Drift Detection.
 - [x] **Kubernetes Provider (manifest generation + kubectl apply)**: Export and apply standard Kubernetes resources.
+- [ ] **Cloudflare & Edge Provider Maturation**: Full production readiness for Cloudflare Workers, R2, and D1.
 - [ ] **Kubernetes Custom Resource Definition (CRD)**: Direct Nova IR operator for native Kubernetes clusters.
+- [ ] **GCP Provider Maturation**: Promote GCP provider from Experimental to Production.
 
 ---
 
