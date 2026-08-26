@@ -153,7 +153,7 @@ function apiObjects(resource: Resource, context: KubernetesMappingContext): Kube
   const ingressEnabled = Boolean(domain || readNested(config, "ingress.enabled"));
   if (ingressEnabled) {
     const host = domain || `${name}.example.invalid`;
-    const ingressAnnotations = recordValue(readNested(config, "ingress.annotations"));
+    const ingressAnnotations = recordValue(readNested(config, "ingress.annotations")) as Record<string, string> | undefined;
     objects.push({
       apiVersion: "networking.k8s.io/v1",
       kind: "Ingress",
