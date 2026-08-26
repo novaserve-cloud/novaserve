@@ -1,12 +1,12 @@
 {
   "name": "novaserve",
-  "version": "2.1.12",
+  "version": "2.1.15",
   "description": "The future of serverless development — as simple as Vercel, as powerful as Terraform, as fast as Bun",
   "author": "NovaServe Contributors",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/novaserve/novaserve"
+    "url": "https://github.com/novaserve-cloud/novaserve"
   },
   "homepage": "https://www.novaserve.cloud/",
   "scripts": {
