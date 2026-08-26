@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/novaserve-cloud/novaserve/main/docs/assets/logo.svg" height="96" alt="NovaServe" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/novaserve-cloud/novaserve/main/docs/assets/logo-dark.svg">
+    <img src="https://raw.githubusercontent.com/novaserve-cloud/novaserve/main/docs/assets/logo.svg" height="96" alt="NovaServe" />
+  </picture>
 </p>
 
 <h3 align="center">The TypeScript-Native Infrastructure Platform</h3>

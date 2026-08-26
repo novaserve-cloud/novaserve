@@ -9,7 +9,7 @@
     </filter>
   </defs>
   <style>
-    .brand-text { fill: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Geist', 'Inter', 'Segoe UI', Roboto, sans-serif; font-weight: 800; font-size: 32px; letter-spacing: -0.6px; }
+    .brand-text { fill: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Geist', 'Inter', 'Segoe UI', Roboto, sans-serif; font-weight: 800; font-size: 32px; letter-spacing: -0.6px; }
     .badge-bg { fill: #f1f5f9; stroke: #cbd5e1; }
     .badge-text { fill: #475569; font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 600; font-size: 13px; }
     @media (prefers-color-scheme: dark) {
