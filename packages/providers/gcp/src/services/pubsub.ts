@@ -44,4 +44,14 @@ export class GCPPubSubService {
       throw err;
     }
   }
+  /** Check if a topic exists (for drift detection) */
+  public async topicExists(topicName: string): Promise<boolean> {
+    const topic = this.pubsub.topic(topicName);
+    try {
+      const [exists] = await topic.exists();
+      return exists;
+    } catch {
+      return false;
+    }
+  }
 }

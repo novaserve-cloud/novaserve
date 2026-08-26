@@ -76,6 +76,26 @@ export const KNOWN_PROVIDER_CAPABILITIES: Record<string, ProviderCapabilityMatri
     },
     alternatives: {},
   },
+  gcp: {
+    providerName: "gcp",
+    displayName: "Google Cloud Platform",
+    supportedCapabilities: {
+      compute: true,
+      storage: true,
+      queue: true,
+      database: { name: "database", supportedEngines: ["postgres", "mysql"] },
+      cache: { name: "cache", supportedEngines: ["redis"] },
+      events: true,
+      secrets: true,
+      websocket: false,
+      cron: true,
+    },
+    alternatives: {
+      websocket: ["Cloud Run WebSocket support", "Firebase Realtime Database"],
+      dynamodb: ["Firestore", "Cloud Bigtable"],
+      mongodb: ["Firestore", "MongoDB Atlas on GCP"],
+    },
+  },
   cloudflare: {
     providerName: "cloudflare",
     displayName: "Cloudflare Workers & R2",

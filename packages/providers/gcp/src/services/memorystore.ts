@@ -58,4 +58,14 @@ export class GCPMemorystoreService {
       throw err;
     }
   }
+  /** Check if a Redis instance exists (for drift detection) */
+  public async instanceExists(instanceName: string): Promise<boolean> {
+    const name = `projects/${this.projectId}/locations/${this.region}/instances/${instanceName}`;
+    try {
+      await this.client.getInstance({ name });
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }

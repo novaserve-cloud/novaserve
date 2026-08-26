@@ -246,7 +246,7 @@ NovaServe uses a target adapter model to abstract cloud operations. Each provide
 | **Local Emulator** | Production | HTTP API (Hono), In-memory SQS, Local Storage, Process Runner |
 | **AWS Provider** | Production | API Gateway v2, Lambda, S3, SQS, RDS PostgreSQL, EventBridge Cron |
 | **Azure Provider** | Production | Azure Functions, Blob Storage, Service Bus Queues, Cosmos DB, API Management, Managed Identity RBAC, Azure Monitor |
-| **GCP Provider** | Experimental | Cloud Functions, Cloud Storage, Pub/Sub, Cloud Scheduler, Cloud SQL, Memorystore, API Gateway, Secret Manager |
+| **GCP Provider** | Production | Cloud Functions, Cloud Storage, Pub/Sub, Cloud Scheduler, Cloud SQL, Memorystore, API Gateway, Secret Manager |
 | **Kubernetes Provider** | Production | Deployment/Service/Ingress/StatefulSet/CronJob/PVC/Secret via built-in client |
 | **Cloudflare Provider** | Experimental | Cloudflare Workers, R2 Buckets, D1 Database, KV Namespaces |
 | **Docker Provider** | Experimental | Docker Compose containerization for local/on-prem deployment |
@@ -332,7 +332,7 @@ novaserve/
 - [x] **Kubernetes Provider (manifest generation + kubectl apply)**: Export and apply standard Kubernetes resources.
 - [ ] **Cloudflare & Edge Provider Maturation**: Full production readiness for Cloudflare Workers, R2, and D1.
 - [ ] **Kubernetes Custom Resource Definition (CRD)**: Direct Nova IR operator for native Kubernetes clusters.
-- [ ] **GCP Provider Maturation**: Promote GCP provider from Experimental to Production.
+- [x] **GCP Provider Maturation**: Promote GCP provider from Experimental to Production.
 
 ---
 

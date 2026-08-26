@@ -51,4 +51,14 @@ export class GCPSecretManagerService {
       throw err;
     }
   }
+  /** Check if a secret exists (for drift detection — never reveals values) */
+  public async secretExists(secretId: string): Promise<boolean> {
+    const name = `projects/${this.projectId}/secrets/${secretId}`;
+    try {
+      await this.client.getSecret({ name });
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }

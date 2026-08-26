@@ -1,7 +1,7 @@
 {
   "name": "novaserve-provider-gcp",
   "version": "2.1.9",
-  "description": "NovaServe GCP Provider — Deploy to Google Cloud Functions, Cloud Run",
+  "description": "NovaServe GCP Provider — Deploy to Cloud Functions, Cloud Storage, Pub/Sub, Cloud Scheduler, Cloud SQL, Memorystore, API Gateway, and Secret Manager",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

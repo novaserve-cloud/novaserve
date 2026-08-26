@@ -56,4 +56,14 @@ export class GCPApiGatewayService {
       throw err;
     }
   }
+  /** Check if an API exists (for drift detection) */
+  public async apiExists(apiId: string): Promise<boolean> {
+    const name = `projects/${this.projectId}/locations/global/apis/${apiId}`;
+    try {
+      await this.client.getApi({ name });
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }

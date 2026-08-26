@@ -60,4 +60,14 @@ export class GCPSchedulerService {
       throw err;
     }
   }
+  /** Check if a job exists (for drift detection) */
+  public async jobExists(jobName: string): Promise<boolean> {
+    const name = `projects/${this.projectId}/locations/${this.region}/jobs/${jobName}`;
+    try {
+      await this.client.getJob({ name });
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }

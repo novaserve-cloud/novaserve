@@ -52,8 +52,14 @@ export class NovaCostEstimator {
       switch (res.type) {
         case "function": {
           const memory = (res.config.memory as number) || 512;
-          cost = Number(((memory / 1024) * 2.4 * 1.5).toFixed(2));
-          breakdown = `${memory}MB memory @ 1M invocations/mo`;
+          if (provider === "gcp") {
+            // GCP Cloud Functions: $0.0000025/invocation + $0.0000025/100ms (256MB)
+            cost = Number(((memory / 1024) * 2.0 * 1.4).toFixed(2));
+            breakdown = `${memory}MB Cloud Function @ ~1M invocations/mo`;
+          } else {
+            cost = Number(((memory / 1024) * 2.4 * 1.5).toFixed(2));
+            breakdown = `${memory}MB memory @ 1M invocations/mo`;
+          }
           pricingModel = "USAGE_BASED";
           confidence = "MEDIUM";
 
@@ -72,30 +78,83 @@ export class NovaCostEstimator {
           break;
         }
         case "storage": {
-          cost = 1.25;
-          breakdown = "50GB S3 Standard storage + 10k PUT/GET requests";
+          if (provider === "gcp") {
+            cost = 1.04;
+            breakdown = "50GB Cloud Storage Standard + 10k operations";
+          } else {
+            cost = 1.25;
+            breakdown = "50GB S3 Standard storage + 10k PUT/GET requests";
+          }
           pricingModel = "USAGE_BASED";
           confidence = "MEDIUM";
           break;
         }
         case "queue": {
-          cost = 0.4;
-          breakdown = "SQS standard queue requests (< 1M reqs)";
+          if (provider === "gcp") {
+            cost = 0.0;
+            breakdown = "Pub/Sub first 10GB/mo free tier";
+          } else {
+            cost = 0.4;
+            breakdown = "SQS standard queue requests (< 1M reqs)";
+          }
           pricingModel = "USAGE_BASED";
           confidence = "HIGH";
           break;
         }
         case "database": {
           const engine = (res.config.engine as string) || "postgres";
-          cost = engine === "dynamodb" ? 3.5 : 15.0;
-          breakdown = `${engine} managed instance / storage`;
+          if (provider === "gcp") {
+            cost = engine === "mysql" ? 12.0 : 15.0;
+            breakdown = `Cloud SQL ${engine} db-f1-micro instance`;
+          } else {
+            cost = engine === "dynamodb" ? 3.5 : 15.0;
+            breakdown = `${engine} managed instance / storage`;
+          }
           pricingModel = engine === "dynamodb" ? "USAGE_BASED" : "ESTIMATED";
           confidence = "MEDIUM";
           break;
         }
         case "api": {
-          cost = 2.0;
-          breakdown = "API Gateway HTTP API requests (< 1M reqs)";
+          if (provider === "gcp") {
+            cost = 1.5;
+            breakdown = "API Gateway calls (< 1M reqs)";
+          } else {
+            cost = 2.0;
+            breakdown = "API Gateway HTTP API requests (< 1M reqs)";
+          }
+          pricingModel = "USAGE_BASED";
+          confidence = "HIGH";
+          break;
+        }
+        case "cache": {
+          if (provider === "gcp") {
+            cost = 36.0;
+            breakdown = "Memorystore Redis BASIC 1GB instance";
+          } else {
+            cost = 25.0;
+            breakdown = "ElastiCache Redis t3.micro instance";
+          }
+          pricingModel = "ESTIMATED";
+          confidence = "MEDIUM";
+          break;
+        }
+        case "cron": {
+          if (provider === "gcp") {
+            cost = 0.1;
+            breakdown = "Cloud Scheduler 3 free jobs + HTTP target";
+          } else {
+            cost = 0.0;
+            breakdown = "EventBridge scheduler rule (free tier)";
+          }
+          pricingModel = "USAGE_BASED";
+          confidence = "HIGH";
+          break;
+        }
+        case "secret": {
+          cost = 0.06;
+          breakdown = provider === "gcp"
+            ? "Secret Manager: 6 active secret versions @ $0.06/version"
+            : "Secrets Manager: $0.40/secret/mo (included in base)";
           pricingModel = "USAGE_BASED";
           confidence = "HIGH";
           break;
@@ -131,3 +190,4 @@ export class NovaCostEstimator {
     };
   }
 }
+
