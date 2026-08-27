@@ -19,6 +19,10 @@
     }
   </style>
 
+  <!-- White Background -->
+  <rect width="100%" height="100%" fill="#ffffff" rx="8" />
+
+
   <!-- Balanced Centered Composition -->
   <!-- Yellow Diamond ◆ (Center X: 42, Y: 32) -->
   <polygon points="42,14 60,32 42,50 24,32" fill="url(#nova-diamond-grad)" filter="url(#glow)" />
