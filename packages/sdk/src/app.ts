@@ -83,6 +83,73 @@ export interface NovaAppConfig {
   /** Default cloud provider */
   provider?: "aws" | "azure" | "gcp" | "cloudflare" | "docker" | "local" | "kubernetes" | "k8s";
 
+  /** Docker-specific configuration */
+  docker?: {
+    image?: string;
+    registry?: {
+      url?: string;
+      repository?: string;
+      tag?: string;
+      tagStrategy?: "version" | "git-commit" | "git-tag" | "timestamp" | "custom";
+      push?: boolean;
+    };
+    resources?: {
+      limits?: { cpus?: string; memory?: string; pids?: number };
+      reservations?: { cpus?: string; memory?: string };
+    };
+    security?: {
+      nonRoot?: boolean;
+      user?: string;
+      readOnlyRootFilesystem?: boolean;
+      dropCapabilities?: boolean;
+      noNewPrivileges?: boolean;
+      tmpfsMounts?: string[];
+      writablePaths?: string[];
+    };
+    healthCheck?: {
+      type?: "http" | "cmd" | "none";
+      endpoint?: string;
+      command?: string;
+      port?: number;
+      interval?: number;
+      timeout?: number;
+      retries?: number;
+      startPeriod?: number;
+      readinessEndpoint?: string;
+      deploymentTimeout?: number;
+    };
+    build?: {
+      context?: string;
+      dockerfilePath?: string;
+      target?: string;
+      args?: Record<string, string>;
+      buildKit?: boolean;
+      cacheFrom?: string[];
+      cacheTo?: string;
+      platform?: string;
+      sbom?: boolean;
+      provenance?: boolean;
+    };
+    logging?: {
+      driver?: string;
+      options?: Record<string, string>;
+      level?: "debug" | "info" | "warn" | "error";
+      structured?: boolean;
+    };
+    compose?: boolean;
+    projectName?: string;
+    network?: {
+      internal?: boolean;
+      public?: boolean;
+      networkNames?: { internal?: string; public?: string };
+      ipv6?: boolean;
+    };
+    bundleDependencies?: boolean;
+    stopGracePeriod?: number;
+    restartPolicy?: "no" | "always" | "on-failure" | "unless-stopped";
+    stage?: string;
+  };
+
   /** Kubernetes-specific configuration */
   kubernetes?: {
     context?: string;
