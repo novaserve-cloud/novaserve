@@ -1,6 +1,6 @@
 {
   "name": "novaserve-provider-kubernetes",
-  "version": "2.1.9",
+  "version": "2.2.0",
   "description": "NovaServe Kubernetes Provider — Generate and apply Kubernetes manifests",
   "type": "module",
   "main": "./dist/index.js",
