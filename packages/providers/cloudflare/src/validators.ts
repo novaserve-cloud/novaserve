@@ -285,5 +285,5 @@ export function validateEnvVarName(name: string): string[] {
  * Only allows alphanumeric, hyphens, underscores, dots, and forward slashes.
  */
 export function sanitizeInput(input: string): string {
-  return input.replace(/[^a-zA-Z0-9\-_./]/g, "");
+  return input.replace(/[^a-zA-Z0-9\-_./ ]/g, "");
 }

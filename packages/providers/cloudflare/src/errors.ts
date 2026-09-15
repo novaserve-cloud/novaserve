@@ -28,13 +28,13 @@ export class CloudflareError extends Error {
     cause?: Error;
   }) {
     const fullMessage = formatErrorMessage(options);
-    super(fullMessage);
+    super(sanitizeErrorMessage(fullMessage));
     this.name = "CloudflareError";
     this.operation = options.operation;
     this.resource = options.resource;
     this.environment = options.environment;
     this.statusCode = options.statusCode;
-    this.actionableMessage = options.actionableMessage || options.message;
+    this.actionableMessage = sanitizeErrorMessage(options.actionableMessage || options.message);
     if (options.cause) {
       this.cause = options.cause;
     }
@@ -366,13 +366,12 @@ export function sanitizeErrorMessage(message: string): string {
   return message
     .replace(/Bearer\s+[A-Za-z0-9_-]{20,}/gi, "Bearer ***MASKED***")
     .replace(
-      /([A-Za-z0-9_-]{40})/g,
+      /([A-Za-z0-9_-]{20,})/g,
       (match) => {
-        // Only mask strings that look like API tokens (40+ chars, mixed case/digits)
+        // Only mask strings that look like API tokens (20+ chars, letters/digits)
         if (
-          match.length >= 40 &&
-          /[A-Z]/.test(match) &&
-          /[a-z]/.test(match) &&
+          match.length >= 20 &&
+          /[a-zA-Z]/.test(match) &&
           /[0-9]/.test(match)
         ) {
           return "***MASKED_TOKEN***";

@@ -643,10 +643,18 @@ describe("Input Validation", () => {
     });
 
     it("returns errors for missing credentials", () => {
+      const original = { ...process.env };
+      delete process.env.CLOUDFLARE_API_TOKEN;
+      delete process.env.CF_API_TOKEN;
+      delete process.env.CLOUDFLARE_ACCOUNT_ID;
+      delete process.env.CF_ACCOUNT_ID;
+
       const result = validateCloudflareConfig([], {});
       expect(result.valid).toBe(false);
       expect(result.errors.some((e) => e.message.includes("API token"))).toBe(true);
       expect(result.errors.some((e) => e.message.includes("Account ID"))).toBe(true);
+
+      Object.assign(process.env, original);
     });
 
     it("validates route configuration requires Zone ID", () => {
