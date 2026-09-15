@@ -1,48 +1,59 @@
 /**
- * Cloudflare Workers Service — Real REST API v4 Integration
+ * Cloudflare Workers Service — Complete Worker Lifecycle
  *
- * Manages Cloudflare Worker scripts, bindings (R2, KV, Queues), and HTTP routes.
+ * Manages Cloudflare Worker scripts including create, update, rollback,
+ * delete, status, versions, routes, custom domains, and cron triggers.
+ * Uses the centralized API client for all operations.
  */
 
-import { CloudflareAuthManager } from "../utils/auth.js";
-import { cloudflareRetry } from "../utils/retry.js";
-
-export interface WorkerBinding {
-  type: "r2_bucket" | "kv_namespace" | "queue" | "secret_text";
-  name: string;
-  namespace_id?: string;
-  bucket_name?: string;
-  queue_name?: string;
-  text?: string;
-}
+import type { CloudflareApiClient } from "../utils/api-client.js";
+import type {
+  CloudflareResolvedBinding,
+  CloudflareWorkerMetadata,
+  CloudflareWorkerDeployment,
+} from "../types.js";
+import { bindingsToApiFormat } from "../utils/bindings.js";
 
 export interface DeployWorkerOptions {
+  /** Worker script name */
   scriptName: string;
+  /** Bundled JavaScript source code */
   scriptContent: string;
-  bindings?: WorkerBinding[];
+  /** Worker bindings (KV, R2, D1, env vars, secrets) */
+  bindings?: CloudflareResolvedBinding[];
+  /** Compatibility date (default: "2024-09-01") */
+  compatibilityDate?: string;
+  /** Compatibility flags (default: ["nodejs_compat"]) */
+  compatibilityFlags?: string[];
+  /** Deployment environment label */
   environment?: string;
+  /** Main module name (default: "index.js") */
+  mainModule?: string;
 }
 
 export class CloudflareWorkersService {
-  private apiToken: string;
-  private accountId: string;
+  private client: CloudflareApiClient;
   private zoneId?: string;
 
-  constructor(apiToken: string, accountId: string, zoneId?: string) {
-    this.apiToken = apiToken;
-    this.accountId = accountId;
+  constructor(client: CloudflareApiClient, zoneId?: string) {
+    this.client = client;
     this.zoneId = zoneId;
   }
 
-  /** Upload or update a Cloudflare Worker script with bindings */
+  /**
+   * Upload or update a Cloudflare Worker script with bindings.
+   *
+   * This operation is idempotent — PUT creates or replaces the Worker.
+   * Returns the Worker URL (workers.dev).
+   */
   public async uploadWorker(options: DeployWorkerOptions): Promise<string> {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/workers/scripts/${options.scriptName}`;
-
     const metadata = {
-      main_module: "index.js",
-      bindings: options.bindings || [],
-      compatibility_date: "2024-01-01",
-      compatibility_flags: ["nodejs_compat"],
+      main_module: options.mainModule || "index.js",
+      bindings: options.bindings
+        ? bindingsToApiFormat(options.bindings)
+        : [],
+      compatibility_date: options.compatibilityDate || "2024-09-01",
+      compatibility_flags: options.compatibilityFlags || ["nodejs_compat"],
     };
 
     const formData = new FormData();
@@ -51,116 +62,221 @@ export class CloudflareWorkersService {
       new Blob([JSON.stringify(metadata)], { type: "application/json" }),
       "metadata.json"
     );
-
     formData.append(
       "index.js",
-      new Blob([options.scriptContent], { type: "application/javascript+module" }),
+      new Blob([options.scriptContent], {
+        type: "application/javascript+module",
+      }),
       "index.js"
     );
 
-    await cloudflareRetry(async () => {
-      const res = await fetch(url, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${this.apiToken}`,
-        },
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`[Cloudflare API Error] Upload worker "${options.scriptName}" failed (${res.status}): ${errText}`);
+    await this.client.uploadForm(
+      `/workers/scripts/${options.scriptName}`,
+      "uploadWorker",
+      formData,
+      {
+        resource: options.scriptName,
+        environment: options.environment,
+        timeoutMs: 60000,
       }
-    });
+    );
 
-    return `https://${options.scriptName}.${this.accountId}.workers.dev`;
+    return `https://${options.scriptName}.${this.client.account}.workers.dev`;
   }
 
-  /** Attach a Worker script route to a Cloudflare Zone */
-  public async createWorkerRoute(pattern: string, scriptName: string): Promise<string> {
-    if (!this.zoneId) return "";
-
-    const url = `https://api.cloudflare.com/client/v4/zones/${this.zoneId}/workers/routes`;
-    const headers = CloudflareAuthManager.getHeaders(this.apiToken);
-
-    let routeId = "";
-
-    await cloudflareRetry(async () => {
-      const res = await fetch(url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          pattern,
-          script: scriptName,
-        }),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        if (errText.includes("already exists")) return;
-        throw new Error(`[Cloudflare API Error] Create route "${pattern}" failed (${res.status}): ${errText}`);
-      }
-
-      const json = (await res.json()) as { result?: { id?: string } };
-      routeId = json.result?.id || "";
-    });
-
-    return routeId;
-  }
-
-  /** Fetch live Worker script status */
-  public async getWorker(scriptName: string): Promise<{ name: string; modified_on?: string } | null> {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/workers/scripts/${scriptName}`;
-    const headers = CloudflareAuthManager.getHeaders(this.apiToken);
-
+  /**
+   * Get Worker script metadata.
+   * Returns null if the Worker doesn't exist.
+   */
+  public async getWorker(
+    scriptName: string
+  ): Promise<CloudflareWorkerMetadata | null> {
     try {
-      const res = await fetch(url, { method: "GET", headers });
-      if (res.status === 404) return null;
-      if (!res.ok) return null;
-
-      const json = (await res.json()) as { result?: { id?: string; modified_on?: string } };
-      return json.result ? { name: scriptName, modified_on: json.result.modified_on } : null;
-    } catch {
-      return null;
-    }
-  }
-
-  /** Delete a Cloudflare Worker script */
-  public async deleteWorker(scriptName: string): Promise<void> {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/workers/scripts/${scriptName}`;
-    const headers = CloudflareAuthManager.getHeaders(this.apiToken);
-
-    try {
-      await cloudflareRetry(async () => {
-        const res = await fetch(url, { method: "DELETE", headers });
-        if (res.status === 404) return;
-        if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(`[Cloudflare API Error] Delete worker "${scriptName}" failed (${res.status}): ${errText}`);
-        }
-      });
+      return await this.client.get<CloudflareWorkerMetadata>(
+        `/workers/scripts/${scriptName}`,
+        "getWorker",
+        { resource: scriptName }
+      );
     } catch (err: unknown) {
-      if (err instanceof Error && err.message.includes("404")) return;
+      if (
+        err instanceof Error &&
+        (err.name === "CloudflareResourceNotFoundError" ||
+          err.message.includes("404"))
+      ) {
+        return null;
+      }
       throw err;
     }
   }
 
-  /** Attach cron triggers to a Worker script */
-  public async updateCronTriggers(scriptName: string, crons: { cron: string }[]): Promise<void> {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/workers/scripts/${scriptName}/schedules`;
-    const headers = CloudflareAuthManager.getHeaders(this.apiToken);
+  /**
+   * List all Worker scripts in the account.
+   */
+  public async listWorkers(): Promise<CloudflareWorkerMetadata[]> {
+    const result = await this.client.get<CloudflareWorkerMetadata[]>(
+      "/workers/scripts",
+      "listWorkers"
+    );
+    return result || [];
+  }
 
-    await cloudflareRetry(async () => {
-      const res = await fetch(url, {
-        method: "PUT",
-        headers,
-        body: JSON.stringify(crons),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`[Cloudflare API Error] Update cron triggers for "${scriptName}" failed (${res.status}): ${errText}`);
+  /**
+   * Delete a Worker script.
+   * Silently succeeds if the Worker doesn't exist.
+   */
+  public async deleteWorker(scriptName: string): Promise<void> {
+    try {
+      await this.client.delete(
+        `/workers/scripts/${scriptName}`,
+        "deleteWorker",
+        { resource: scriptName }
+      );
+    } catch (err: unknown) {
+      if (
+        err instanceof Error &&
+        (err.name === "CloudflareResourceNotFoundError" ||
+          err.message.includes("404"))
+      ) {
+        return; // Already deleted
       }
-    });
+      throw err;
+    }
+  }
+
+  /**
+   * Get Worker deployment versions for rollback support.
+   */
+  public async getWorkerDeployments(
+    scriptName: string
+  ): Promise<CloudflareWorkerDeployment[]> {
+    try {
+      const result = await this.client.get<{ deployments: CloudflareWorkerDeployment[] }>(
+        `/workers/scripts/${scriptName}/deployments`,
+        "getWorkerDeployments",
+        { resource: scriptName }
+      );
+      return result?.deployments || [];
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Rollback a Worker to a specific version.
+   *
+   * Uses Cloudflare's Deployments API to route traffic
+   * back to a previous version.
+   */
+  public async rollbackWorker(
+    scriptName: string,
+    versionId: string
+  ): Promise<void> {
+    await this.client.post(
+      `/workers/scripts/${scriptName}/deployments`,
+      "rollbackWorker",
+      {
+        strategy: "percentage",
+        versions: [{ version_id: versionId, percentage: 100 }],
+      },
+      { resource: scriptName }
+    );
+  }
+
+  /**
+   * Attach cron triggers to a Worker script.
+   */
+  public async updateCronTriggers(
+    scriptName: string,
+    crons: { cron: string }[]
+  ): Promise<void> {
+    await this.client.put(
+      `/workers/scripts/${scriptName}/schedules`,
+      "updateCronTriggers",
+      crons,
+      { resource: scriptName }
+    );
+  }
+
+  /**
+   * Create a Worker route on a Cloudflare Zone.
+   * Requires Zone ID.
+   * Idempotent: silently succeeds if route already exists.
+   */
+  public async createWorkerRoute(
+    pattern: string,
+    scriptName: string,
+    zoneId?: string
+  ): Promise<string> {
+    const zone = zoneId || this.zoneId;
+    if (!zone) return "";
+
+    try {
+      const result = await this.client.requestUnscoped<{ id: string }>(
+        "POST",
+        `/zones/${zone}/workers/routes`,
+        "createWorkerRoute",
+        { pattern, script: scriptName },
+        { resource: scriptName }
+      );
+      return result?.id || "";
+    } catch (err: unknown) {
+      // Silently handle "already exists"
+      if (
+        err instanceof Error &&
+        (err.name === "CloudflareResourceExistsError" ||
+          err.message.includes("already exists"))
+      ) {
+        return "";
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Attach a custom domain to a Worker.
+   * Requires Zone ID.
+   */
+  public async setWorkerCustomDomain(
+    scriptName: string,
+    hostname: string,
+    zoneId?: string
+  ): Promise<void> {
+    const zone = zoneId || this.zoneId;
+    if (!zone) return;
+
+    try {
+      await this.client.put(
+        `/workers/domains`,
+        "setWorkerCustomDomain",
+        {
+          zone_id: zone,
+          hostname,
+          service: scriptName,
+          environment: "production",
+        },
+        { resource: scriptName }
+      );
+    } catch (err: unknown) {
+      if (
+        err instanceof Error &&
+        err.name === "CloudflareResourceExistsError"
+      ) {
+        return;
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Check if a Worker is actively deployed and serving requests.
+   */
+  public async getWorkerStatus(
+    scriptName: string
+  ): Promise<{ exists: boolean; modifiedOn?: string }> {
+    const worker = await this.getWorker(scriptName);
+    if (!worker) {
+      return { exists: false };
+    }
+    return { exists: true, modifiedOn: worker.modified_on };
   }
 }

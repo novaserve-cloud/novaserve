@@ -1,119 +1,113 @@
 /**
- * Cloudflare Storage Service — R2 Buckets & KV Namespaces
+ * Cloudflare R2 Storage Service — R2 Object Storage Buckets
  *
- * Manages Cloudflare R2 object storage buckets and Workers KV namespaces.
+ * Manages Cloudflare R2 buckets with full CRUD lifecycle.
+ * Idempotent: checks for existing buckets before creating.
  */
 
-import { CloudflareAuthManager } from "../utils/auth.js";
-import { cloudflareRetry } from "../utils/retry.js";
+import type { CloudflareApiClient } from "../utils/api-client.js";
+import type { CloudflareR2Bucket } from "../types.js";
 
 export class CloudflareStorageService {
-  private apiToken: string;
-  private accountId: string;
+  private client: CloudflareApiClient;
 
-  constructor(apiToken: string, accountId: string) {
-    this.apiToken = apiToken;
-    this.accountId = accountId;
+  constructor(client: CloudflareApiClient) {
+    this.client = client;
   }
 
-  /** Create an R2 Object Storage bucket */
-  public async createR2Bucket(bucketName: string): Promise<string> {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/r2/buckets`;
-    const headers = CloudflareAuthManager.getHeaders(this.apiToken);
-
-    await cloudflareRetry(async () => {
-      const res = await fetch(url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ name: bucketName }),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        if (errText.includes("already exists") || res.status === 409) return;
-        throw new Error(`[Cloudflare API Error] Create R2 bucket "${bucketName}" failed (${res.status}): ${errText}`);
-      }
-    });
-
-    return `r2://${this.accountId}/${bucketName}`;
-  }
-
-  /** Check if an R2 bucket exists */
-  public async r2BucketExists(bucketName: string): Promise<boolean> {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/r2/buckets/${bucketName}`;
-    const headers = CloudflareAuthManager.getHeaders(this.apiToken);
-
-    try {
-      const res = await fetch(url, { method: "GET", headers });
-      return res.ok;
-    } catch {
-      return false;
+  /**
+   * Create an R2 bucket.
+   *
+   * Idempotent: checks if a bucket with the same name already exists.
+   * If it does, returns the existing bucket name.
+   *
+   * @returns Bucket name
+   */
+  public async createBucket(
+    bucketName: string,
+    locationHint?: string
+  ): Promise<string> {
+    // Check if bucket already exists
+    const exists = await this.bucketExists(bucketName);
+    if (exists) {
+      return bucketName;
     }
-  }
 
-  /** Create a KV Namespace */
-  public async createKVNamespace(title: string): Promise<string> {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/storage/kv/namespaces`;
-    const headers = CloudflareAuthManager.getHeaders(this.apiToken);
+    const body: Record<string, unknown> = { name: bucketName };
+    if (locationHint) {
+      body.locationHint = locationHint;
+    }
 
-    let namespaceId = "";
-
-    await cloudflareRetry(async () => {
-      const res = await fetch(url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ title }),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`[Cloudflare API Error] Create KV namespace "${title}" failed (${res.status}): ${errText}`);
-      }
-
-      const json = (await res.json()) as { result?: { id?: string } };
-      namespaceId = json.result?.id || "";
+    await this.client.post("/r2/buckets", "createR2Bucket", body, {
+      resource: bucketName,
     });
 
-    return namespaceId;
+    return bucketName;
   }
 
-  /** Delete a KV Namespace */
-  public async deleteKVNamespace(namespaceId: string): Promise<void> {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/storage/kv/namespaces/${namespaceId}`;
-    const headers = CloudflareAuthManager.getHeaders(this.apiToken);
-
+  /**
+   * Get R2 bucket metadata.
+   */
+  public async getBucket(
+    bucketName: string
+  ): Promise<CloudflareR2Bucket | null> {
     try {
-      await cloudflareRetry(async () => {
-        const res = await fetch(url, { method: "DELETE", headers });
-        if (res.status === 404) return;
-        if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(`[Cloudflare API Error] Delete KV namespace "${namespaceId}" failed (${res.status}): ${errText}`);
-        }
-      });
+      return await this.client.get<CloudflareR2Bucket>(
+        `/r2/buckets/${bucketName}`,
+        "getR2Bucket",
+        { resource: bucketName }
+      );
     } catch (err: unknown) {
-      if (err instanceof Error && err.message.includes("404")) return;
+      if (
+        err instanceof Error &&
+        err.name === "CloudflareResourceNotFoundError"
+      ) {
+        return null;
+      }
       throw err;
     }
   }
 
-  /** Delete an R2 Object Storage bucket */
-  public async deleteR2Bucket(bucketName: string): Promise<void> {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/r2/buckets/${bucketName}`;
-    const headers = CloudflareAuthManager.getHeaders(this.apiToken);
+  /**
+   * List all R2 buckets in the account.
+   */
+  public async listBuckets(): Promise<CloudflareR2Bucket[]> {
+    const result = await this.client.get<{ buckets: CloudflareR2Bucket[] }>(
+      "/r2/buckets",
+      "listR2Buckets"
+    );
+    return result?.buckets || [];
+  }
 
+  /**
+   * Delete an R2 bucket.
+   * Silently succeeds if the bucket doesn't exist.
+   *
+   * Note: Bucket must be empty before deletion.
+   */
+  public async deleteBucket(bucketName: string): Promise<void> {
     try {
-      await cloudflareRetry(async () => {
-        const res = await fetch(url, { method: "DELETE", headers });
-        if (res.status === 404) return;
-        if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(`[Cloudflare API Error] Delete R2 bucket "${bucketName}" failed (${res.status}): ${errText}`);
-        }
-      });
+      await this.client.delete(
+        `/r2/buckets/${bucketName}`,
+        "deleteR2Bucket",
+        { resource: bucketName }
+      );
     } catch (err: unknown) {
-      if (err instanceof Error && err.message.includes("404")) return;
+      if (
+        err instanceof Error &&
+        err.name === "CloudflareResourceNotFoundError"
+      ) {
+        return;
+      }
       throw err;
     }
+  }
+
+  /**
+   * Check if an R2 bucket exists.
+   */
+  public async bucketExists(bucketName: string): Promise<boolean> {
+    const bucket = await this.getBucket(bucketName);
+    return bucket !== null;
   }
 }
