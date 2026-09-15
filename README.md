@@ -2,8 +2,8 @@
   <a href="https://github.com/novaserve-cloud/novaserve">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/novaserve-cloud/novaserve/main/docs/assets/logo-dark.svg" width="420" />
-      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/novaserve-cloud/novaserve/main/docs/assets/logo.svg" width="420" />
-      <img src="https://raw.githubusercontent.com/novaserve-cloud/novaserve/main/docs/assets/logo.svg" width="420" height="80" alt="NovaServe — TypeScript-native serverless framework" />
+      <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/novaserve-cloud/novaserve/main/docs/assets/logo.png" width="420" />
+      <img src="https://raw.githubusercontent.com/novaserve-cloud/novaserve/main/docs/assets/logo.png" width="420" height="80" alt="NovaServe — TypeScript-native serverless framework" />
     </picture>
   </a>
 </p>
