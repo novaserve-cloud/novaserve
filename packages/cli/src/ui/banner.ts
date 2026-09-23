@@ -13,7 +13,7 @@ const BANNER = `
   ╚══════════════════════════════════════════════════╝
 `;
 
-const BANNER_COMPACT = `  ◆ NovaServe v2.2.4`;
+const BANNER_COMPACT = `  ◆ NovaServe v2.2.5`;
 
 let bannerPrinted = false;
 

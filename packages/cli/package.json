@@ -1,6 +1,6 @@
 {
   "name": "novaserve",
-  "version": "2.2.4",
+  "version": "2.2.5",
   "description": "TypeScript-to-cloud compiler. Define serverless apps in TypeScript, compile to AWS, Azure, GCP, Cloudflare, Docker, or Kubernetes. Built-in local dev server and deployment planner.",
   "author": {
     "name": "Md Shadab Azam Ansari",
