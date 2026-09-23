@@ -8,12 +8,12 @@ const BANNER = `
   ╔══════════════════════════════════════════════════╗
   ║                                                  ║
   ║   ◆  N O V A S E R V E                          ║
-  ║      The future of serverless development        ║
+  ║      Like tsc for your infrastructure            ║
   ║                                                  ║
   ╚══════════════════════════════════════════════════╝
 `;
 
-const BANNER_COMPACT = `  ◆ NovaServe v2.0.0`;
+const BANNER_COMPACT = `  ◆ NovaServe v2.2.4`;
 
 let bannerPrinted = false;
 

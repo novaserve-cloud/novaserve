@@ -96,6 +96,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Run package validation
+        run: node scripts/validate-package.mjs
+
       - name: Verify npm pack produces valid tarball
         run: |
           cd packages/core && npm pack --dry-run

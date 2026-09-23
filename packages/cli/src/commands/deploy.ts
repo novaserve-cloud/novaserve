@@ -76,6 +76,23 @@ export function deployCommand(): Command {
       // Fetch caller identity status for account safety verification
       const status = await cloudProvider.getStatus();
 
+      if (provider === "aws" && status.configured === false) {
+        logger.blank();
+        logger.error("AWS credentials not found or invalid.");
+        logger.blank();
+        logger.info("NovaServe could not detect valid AWS credentials to execute cloud deployment.");
+        logger.blank();
+        logger.info("Try one of:");
+        logger.kv("  1.", "aws configure");
+        logger.kv("  2.", "export AWS_ACCESS_KEY_ID=... && export AWS_SECRET_ACCESS_KEY=...");
+        logger.kv("  3.", "export AWS_PROFILE=your-profile");
+        logger.blank();
+        logger.info("For diagnostics, run:");
+        logger.kv("  >", "nova doctor");
+        logger.blank();
+        process.exit(1);
+      }
+
       logger.box([
         { key: "App:", value: app.name },
         { key: "Environment:", value: environment },

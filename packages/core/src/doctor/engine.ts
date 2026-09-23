@@ -31,8 +31,8 @@ export class NovaDoctorEngine {
         id: "DOC-NODE-001",
         category: "Runtime",
         title: "Node.js Environment",
-        status: parseInt(nodeVersion.replace("v", "").split(".")[0], 10) >= 18 ? "pass" : "fail",
-        message: `Running Node.js ${nodeVersion} (>= 18.0.0 required)`,
+        status: parseInt(nodeVersion.replace("v", "").split(".")[0], 10) >= 20 ? "pass" : "fail",
+        message: `Running Node.js ${nodeVersion} (>= 20.0.0 required for production)`,
         fixable: false,
       },
       {
@@ -44,13 +44,23 @@ export class NovaDoctorEngine {
         fixable: false,
       },
       {
+        id: "DOC-PKG-001",
+        category: "Configuration",
+        title: "Project Configuration",
+        status: ir ? "pass" : "warn",
+        message: ir
+          ? "Valid NovaServe project configuration detected (nova.config.ts)"
+          : "No active nova.config.ts found in current working directory",
+        fixable: false,
+      },
+      {
         id: "DOC-CRED-001",
         category: "Credentials",
         title: "AWS Cloud Credentials",
-        status: process.env.AWS_ACCESS_KEY_ID ? "pass" : "warn",
-        message: process.env.AWS_ACCESS_KEY_ID
+        status: (process.env.AWS_ACCESS_KEY_ID || process.env.AWS_PROFILE) ? "pass" : "warn",
+        message: (process.env.AWS_ACCESS_KEY_ID || process.env.AWS_PROFILE)
           ? "AWS credentials configured in environment"
-          : "No AWS credentials found in environment. Deployment will require local/mock mode.",
+          : "No AWS credentials found in environment. Deployment will require local mode or `aws configure`.",
         fixable: false,
       },
     ];

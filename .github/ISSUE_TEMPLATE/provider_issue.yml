@@ -1,0 +1,25 @@
+name: Provider Issue
+description: Report a bug or limitation with a specific cloud provider adapter
+labels: ["provider"]
+body:
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Cloud Provider
+      options:
+        - AWS
+        - Local
+        - Cloudflare
+        - Docker
+        - Azure
+        - GCP
+        - Kubernetes
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Issue Details
+      description: What failed during validation, planning, or deployment?
+    validations:
+      required: true

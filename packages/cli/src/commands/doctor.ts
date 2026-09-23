@@ -8,7 +8,7 @@
 import { Command } from "commander";
 import chalk from "chalk";
 import { NovaCompiler, NovaDoctorEngine, toResource } from "novaserve-core";
-import { loadConfig } from "../utils/config-loader.js";
+import { tryLoadConfig } from "../utils/config-loader.js";
 
 export function doctorCommand(): Command {
   return new Command("doctor")
@@ -19,13 +19,15 @@ export function doctorCommand(): Command {
 
       let irGraph;
       try {
-        const app = await loadConfig();
-        const coreResources = (app.resources || []).map((r: any) => toResource(r));
-        const compiled = NovaCompiler.compile({
-          appName: app.name || "nova-app",
-          resources: coreResources,
-        });
-        irGraph = compiled.ir;
+        const app = await tryLoadConfig();
+        if (app) {
+          const coreResources = (app.resources || []).map((r: any) => toResource(r));
+          const compiled = NovaCompiler.compile({
+            appName: app.name || "nova-app",
+            resources: coreResources,
+          });
+          irGraph = compiled.ir;
+        }
       } catch {
         // Continue diagnosis without IR if config missing
       }

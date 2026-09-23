@@ -30,3 +30,19 @@ export async function loadConfig(cwd?: string): Promise<NovaApp> {
     process.exit(1);
   }
 }
+
+/**
+ * Load the nova config if it exists, without exiting the process if missing.
+ */
+export async function tryLoadConfig(cwd?: string): Promise<NovaApp | null> {
+  const parser = new ConfigParser(cwd || process.cwd());
+  const configFile = parser.findConfigFile();
+  if (!configFile) {
+    return null;
+  }
+  try {
+    return await parser.load();
+  } catch {
+    return null;
+  }
+}

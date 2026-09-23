@@ -16,7 +16,7 @@ The NovaServe team takes security seriously. We appreciate your efforts to respo
 ### Reporting Process
 
 1. **Email**: Send a detailed report to the repository owner via GitHub's private vulnerability reporting:
-   - Navigate to the [Security tab](https://github.com/sazamansari/NovaServe-/security/advisories) of this repository
+   - Navigate to the [Security tab](https://github.com/novaserve-cloud/novaserve/security/advisories) of this repository
    - Click **"Report a vulnerability"**
 
 2. **What to include in your report**:

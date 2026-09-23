@@ -1,7 +1,7 @@
 {
   "name": "novaserve",
   "version": "2.2.4",
-  "description": "NovaServe — Next-Generation Cloud-Agnostic Serverless Development Framework",
+  "description": "TypeScript-to-cloud compiler. Define serverless apps in TypeScript, compile to AWS, Azure, GCP, Cloudflare, Docker, or Kubernetes. Built-in local dev server and deployment planner.",
   "author": {
     "name": "Md Shadab Azam Ansari",
     "email": "md.shadab.azam.ansari@gmail.com",
@@ -14,10 +14,24 @@
   "homepage": "https://www.novaserve.cloud/",
   "keywords": [
     "serverless",
-    "framework",
-    "cloud",
     "typescript",
+    "infrastructure-as-code",
     "iac",
+    "aws",
+    "lambda",
+    "azure",
+    "gcp",
+    "cloudflare",
+    "docker",
+    "kubernetes",
+    "multi-cloud",
+    "deployment",
+    "cli",
+    "compiler",
+    "terraform-alternative",
+    "serverless-framework-alternative",
+    "devops",
+    "cloud-infrastructure",
     "novaserve"
   ],
   "type": "module",
@@ -43,7 +57,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run",
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
@@ -73,8 +87,12 @@
   "files": [
     "dist",
     "bin",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "license": "Apache-2.0",
   "allowScripts": {
     "esbuild": true,

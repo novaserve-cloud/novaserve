@@ -1,6 +1,7 @@
 {
-  "name": "novaserve",
+  "name": "novaserve-monorepo",
   "version": "2.2.4",
+  "private": true,
   "description": "The future of serverless development — as simple as Vercel, as powerful as Terraform, as fast as Bun",
   "author": "NovaServe Contributors",
   "license": "Apache-2.0",
@@ -15,6 +16,7 @@
     "test": "turbo test",
     "typecheck": "turbo typecheck",
     "lint": "turbo lint",
+    "validate:package": "node scripts/validate-package.mjs",
     "clean": "turbo clean && rm -rf node_modules"
   },
   "devDependencies": {

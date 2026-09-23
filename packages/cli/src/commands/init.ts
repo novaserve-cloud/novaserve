@@ -86,7 +86,7 @@ export function initCommand(): Command {
             destroy: "nova destroy",
           },
           dependencies: {
-            novaserve: "^0.1.0",
+            novaserve: "^2.2.4",
           },
           devDependencies: {
             typescript: "^5.7.0",

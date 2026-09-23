@@ -1,0 +1,33 @@
+name: Bug Report
+description: Create a report to help us improve NovaServe
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug!
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Exact steps to reproduce the issue.
+      placeholder: |
+        1. Run 'nova init test-app'
+        2. Run 'nova deploy'
+        3. See error...
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Node version, OS, NovaServe CLI version (run `nova doctor`).
+    validations:
+      required: true

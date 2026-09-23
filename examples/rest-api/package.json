@@ -1,0 +1,19 @@
+{
+  "name": "rest-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nova dev",
+    "build": "nova build",
+    "plan": "nova plan",
+    "deploy": "nova deploy"
+  },
+  "dependencies": {
+    "novaserve": "^2.2.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  }
+}
